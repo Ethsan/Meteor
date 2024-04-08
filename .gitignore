@@ -1,0 +1,11 @@
+*.o
+*.so
+*.a
+
+compile_commands.json
+.vscode
+.idea
+.cache
+
+brick
+test_runner
