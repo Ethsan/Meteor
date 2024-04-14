@@ -1,13 +1,12 @@
-#include "SDL_events.h"
 #include <SDL.h>
 #include <SDL_image.h>
+
 #include <cstddef>
 #include <memory>
 #include <optional>
 #include <span>
 #include <stdexcept>
 #include <string>
-#include <variant>
 
 namespace SDL
 {
@@ -23,7 +22,6 @@ using DisplayEvent = SDL_DisplayEvent;
 using WindowEvent = SDL_WindowEvent;
 using KeyboardEvent = SDL_KeyboardEvent;
 using TextEditingEvent = SDL_TextEditingEvent;
-using TextEditingExtEvent = SDL_TextEditingExtEvent;
 using TextInputEvent = SDL_TextInputEvent;
 using MouseMotionEvent = SDL_MouseMotionEvent;
 using MouseButtonEvent = SDL_MouseButtonEvent;
@@ -33,7 +31,6 @@ using JoyBallEvent = SDL_JoyBallEvent;
 using JoyHatEvent = SDL_JoyHatEvent;
 using JoyButtonEvent = SDL_JoyButtonEvent;
 using JoyDeviceEvent = SDL_JoyDeviceEvent;
-using JoyBatteryEvent = SDL_JoyBatteryEvent;
 using ControllerAxisEvent = SDL_ControllerAxisEvent;
 using ControllerButtonEvent = SDL_ControllerButtonEvent;
 using ControllerDeviceEvent = SDL_ControllerDeviceEvent;
