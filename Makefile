@@ -3,11 +3,11 @@ TEST_DIR=test
 
 CC = g++
 
-CFLAGS = -Wall -Weffc++ -Wextra -Wsign-conversion -Werror -std=c++20
+CFLAGS = -Wall -Weffc++ -Wextra -Wsign-conversion -Werror -std=c++23
 CFLAGS += $(shell sdl2-config --cflags)
 CFLAGS += -I$(SRC_DIR)
 
-LDFLAGS = $(shell sdl2-config --libs)
+LDFLAGS = $(shell sdl2-config --libs) -lSDL2_image -lSDL2_ttf
 
 OUT = bricked
 
