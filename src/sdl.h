@@ -1,11 +1,12 @@
+#pragma once
+
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_ttf.h>
 
-#include <cstddef>
 #include <memory>
 #include <optional>
 #include <span>
-#include <stdexcept>
 #include <string>
 
 namespace SDL
@@ -71,11 +72,6 @@ inline void delay(Uint32 ms)
 	SDL_Delay(ms);
 }
 
-inline void quit()
-{
-	SDL_Quit();
-}
-
 inline std::optional<Event> pollEvent()
 {
 	Event e;
@@ -137,15 +133,35 @@ class SDL {
 				fail("SDL_Init");
 			if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG)
 				fail("IMG_Init");
+			if (TTF_Init() != 0)
+				fail("TTF_Init");
 		}
 		count++;
 	}
+
+	SDL(const SDL &)
+	{
+		count++;
+	}
+	SDL(SDL &&)
+	{
+	}
+	SDL &operator=(const SDL &)
+	{
+		return *this;
+	}
+	SDL &operator=(SDL &&)
+	{
+		return *this;
+	}
+
 	~SDL()
 	{
 		count--;
 		if (count == 0) {
 			IMG_Quit();
 			SDL_Quit();
+			TTF_Quit();
 		}
 	}
 };
@@ -153,7 +169,7 @@ class SDL {
 class Window {
     private:
 	SDL sdl_{};
-	std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> window_;
+	std::shared_ptr<SDL_Window> window_;
 
 	friend class Renderer;
 
@@ -163,15 +179,23 @@ class Window {
 	}
 
     public:
-	Window(Window &&) = default;
-	Window &operator=(const Window &) = delete;
-	Window &operator=(Window &&) = default;
-
-	Window(const Window &other)
-		: window_(SDL_CreateWindowFrom(other.get()), SDL_DestroyWindow)
+	Window(SDL_Window *window)
+		: window_(window, SDL_DestroyWindow)
 	{
-		if (window_ == nullptr)
-			fail("SDL_CreateWindowFrom");
+	}
+
+    public:
+	Window(Window &&) = default;
+	Window &operator=(const Window &) = default;
+	Window &operator=(Window &&) = default;
+	Window(const Window &) = default;
+
+	Window duplicate() const
+	{
+		SDL_Window *window = SDL_CreateWindowFrom(get());
+		if (window == nullptr)
+			fail("SDL_DuplicateWindow");
+		return Window(window);
 	}
 
 	Window(const std::string title, int x, int y, int w, int h, Uint32 flags = 0)
@@ -190,9 +214,52 @@ class Window {
 			fail("SDL_CreateWindow");
 	}
 
-	Uint32 getId() const
+	std::pair<int, int> getSize() const
 	{
-		return SDL_GetWindowID(get());
+		int w, h;
+		SDL_GetWindowSize(get(), &w, &h);
+		return { w, h };
+	}
+
+	void setSize(int w, int h)
+	{
+		SDL_SetWindowSize(get(), w, h);
+	}
+
+	std::pair<int, int> getPosition() const
+	{
+		int x, y;
+		SDL_GetWindowPosition(get(), &x, &y);
+		return { x, y };
+	}
+
+	void setPosition(int x, int y)
+	{
+		SDL_SetWindowPosition(get(), x, y);
+	}
+
+	Rect getRect() const
+	{
+		Rect rect;
+		SDL_GetWindowPosition(get(), &rect.x, &rect.y);
+		SDL_GetWindowSize(get(), &rect.w, &rect.h);
+		return rect;
+	}
+
+	void setRect(const Rect &rect)
+	{
+		SDL_SetWindowPosition(get(), rect.x, rect.y);
+		SDL_SetWindowSize(get(), rect.w, rect.h);
+	}
+
+	std::string getTitle() const
+	{
+		return SDL_GetWindowTitle(get());
+	}
+
+	void setTitle(const std::string &title)
+	{
+		SDL_SetWindowTitle(get(), title.c_str());
 	}
 };
 
@@ -209,7 +276,7 @@ class Surface;
 
 class Renderer {
     private:
-	std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> renderer_;
+	std::shared_ptr<SDL_Renderer> renderer_;
 
 	friend class Texture;
 
@@ -239,15 +306,15 @@ class Renderer {
 		SDL_RenderPresent(get());
 	}
 
-	void setColor(Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+	void setDrawColor(Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 	{
 		if (SDL_SetRenderDrawColor(get(), r, g, b, a) != 0)
 			fail("SDL_SetRenderDrawColor");
 	}
 
-	void setColor(const Color &color)
+	void setDrawColor(const Color &color)
 	{
-		setColor(color.r, color.g, color.b, color.a);
+		setDrawColor(color.r, color.g, color.b, color.a);
 	}
 
 	void setTarget(Texture &texture);
@@ -370,7 +437,7 @@ class Renderer {
 
 class Surface {
     private:
-	std::unique_ptr<SDL_Surface, decltype(&SDL_FreeSurface)> surface_;
+	std::shared_ptr<SDL_Surface> surface_;
 	friend class Texture;
 	friend class Renderer;
 
@@ -380,8 +447,9 @@ class Surface {
 	}
 
     public:
+	Surface(const Surface &) = default;
 	Surface(Surface &&) = default;
-	Surface &operator=(const Surface &) = delete;
+	Surface &operator=(const Surface &) = default;
 	Surface &operator=(Surface &&) = default;
 	Surface(const std::string &file)
 		: surface_(IMG_Load(file.c_str()), SDL_FreeSurface)
@@ -394,6 +462,11 @@ class Surface {
 			if (surface_ == nullptr)
 				fail("SDL_ConvertSurfaceFormat");
 		}
+	}
+
+	Surface(SDL_Surface *surface)
+		: surface_(surface, SDL_FreeSurface)
+	{
 	}
 
 	Surface(int w, int h)
@@ -473,7 +546,7 @@ class Surface {
 
 class Texture {
     private:
-	std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)> texture_;
+	std::shared_ptr<SDL_Texture> texture_;
 
 	friend class Renderer;
 
@@ -484,9 +557,9 @@ class Texture {
 
     public:
 	Texture(Texture &&) = default;
-	Texture &operator=(const Texture &) = delete;
+	Texture &operator=(const Texture &) = default;
 	Texture &operator=(Texture &&) = default;
-	Texture(Renderer &renderer, Surface &surface)
+	Texture(Renderer &renderer, Surface surface)
 		: texture_(SDL_CreateTextureFromSurface(renderer.get(), surface.get()), SDL_DestroyTexture)
 	{
 		if (texture_ == nullptr)
@@ -495,6 +568,8 @@ class Texture {
 		Uint32 format;
 		SDL_QueryTexture(get(), &format, nullptr, nullptr, nullptr);
 		SDL_assert(format == Pixel::format);
+		if (format != Pixel::format)
+			SDL_LogWarn(SDL_LOG_CATEGORY_RENDER, "Unsupported pixel format");
 	}
 	Texture(Renderer &renderer, int access, int w, int h)
 		: texture_(SDL_CreateTexture(renderer.get(), Pixel::format, access, w, h), SDL_DestroyTexture)
@@ -561,6 +636,13 @@ class Texture {
 			fail("SDL_QueryTexture");
 	}
 
+	Rect getRect() const
+	{
+		Rect rect = { 0, 0, 0, 0 };
+		query(rect.w, rect.h);
+		return rect;
+	}
+
 	int getWidth() const
 	{
 		int w, h;
@@ -614,4 +696,27 @@ inline void Renderer::copy(Texture &texture, const Rect &src, const FRect &dst, 
 	if (SDL_RenderCopyExF(get(), texture.get(), &src, &dst, angle, &center, flip) != 0)
 		fail("SDL_RenderCopyExF");
 }
+
+class Font {
+    private:
+	std::shared_ptr<TTF_Font> font_;
+
+    public:
+	Font(Font &&) = default;
+	Font &operator=(const Font &) = delete;
+	Font &operator=(Font &&) = default;
+	Font(const std::string &file, int ptsize)
+		: font_(TTF_OpenFont(file.c_str(), ptsize), TTF_CloseFont)
+	{
+		if (font_ == nullptr)
+			fail("TTF_OpenFont");
+	}
+	Surface renderText(const std::string &text, const Color &color) const
+	{
+		SDL_Surface *surface = TTF_RenderText_Blended(font_.get(), text.c_str(), color);
+		if (surface == nullptr)
+			fail("TTF_RenderText_Blended");
+		return Surface(surface);
+	}
+};
 }; // namespace SDL

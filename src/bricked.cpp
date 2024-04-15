@@ -1,35 +1,12 @@
-#include "sdl.h"
-#include <iostream>
-
-using namespace SDL;
-using namespace std;
+#include "mainscreen.h"
 
 int main(void)
 {
-	Window window("SDL2 Example", 800, 600);
-	Renderer renderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	SDL::Window window("SDL2 Example", 800, 600);
 
-	bool running = true;
-	while (running) {
-		while (auto event = pollEvent()) {
-			switch (event->type) {
-			case SDL_QUIT:
-				running = false;
-				break;
-			default:
-				cout << "Event: " << event->type << endl;
-				break;
-			}
-		}
-		renderer.clear();
+	FSM fsm(std::make_shared<MainScreen>(window));
 
-		Rect rect = { 100, 100, 200, 200 };
-		renderer.setColor(255, 0, 0, 255);
-		renderer.fillRect(rect);
-		renderer.setColor(0, 0, 0, 255);
+	fsm.run();
 
-		renderer.present();
-		delay(16);
-	}
 	return 0;
 }
