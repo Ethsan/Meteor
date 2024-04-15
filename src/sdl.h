@@ -145,6 +145,7 @@ class SDL {
 	}
 	SDL(SDL &&)
 	{
+		count++;
 	}
 	SDL &operator=(const SDL &)
 	{
@@ -276,6 +277,7 @@ class Surface;
 
 class Renderer {
     private:
+	SDL sdl_{};
 	std::shared_ptr<SDL_Renderer> renderer_;
 
 	friend class Texture;
@@ -286,6 +288,7 @@ class Renderer {
 	}
 
     public:
+	Renderer(const Renderer &) = default;
 	Renderer(Renderer &&) = default;
 	Renderer &operator=(const Renderer &) = delete;
 	Renderer &operator=(Renderer &&) = default;
@@ -296,6 +299,7 @@ class Renderer {
 			fail("SDL_CreateRenderer");
 	}
 	Renderer(Surface &surface);
+
 	void clear()
 	{
 		if (SDL_RenderClear(get()) != 0)
@@ -323,12 +327,12 @@ class Renderer {
 		if (SDL_SetRenderTarget(get(), nullptr) != 0)
 			fail("SDL_SetRenderTarget");
 	}
-	void copy(Texture &texture, const Rect &src, const Rect &dst);
-	void copy(Texture &texture, const Rect &src, const FRect &dst);
+	void copy(const Texture &texture, const Rect &src, const Rect &dst);
+	void copy(const Texture &texture, const Rect &src, const FRect &dst);
 
-	void copy(Texture &texture, const Rect &src, const Rect &dst, double angle, const Point &center,
+	void copy(const Texture &texture, const Rect &src, const Rect &dst, double angle, const Point &center,
 		  RendererFlip flip);
-	void copy(Texture &texture, const Rect &src, const FRect &dst, double angle, const FPoint &center,
+	void copy(const Texture &texture, const Rect &src, const FRect &dst, double angle, const FPoint &center,
 		  RendererFlip flip);
 
 	void drawLine(int x1, int y1, int x2, int y2)
@@ -437,6 +441,7 @@ class Renderer {
 
 class Surface {
     private:
+	SDL sdl_{};
 	std::shared_ptr<SDL_Surface> surface_;
 	friend class Texture;
 	friend class Renderer;
@@ -546,6 +551,7 @@ class Surface {
 
 class Texture {
     private:
+	SDL sdl_{};
 	std::shared_ptr<SDL_Texture> texture_;
 
 	friend class Renderer;
@@ -556,6 +562,7 @@ class Texture {
 	}
 
     public:
+	Texture(const Texture &) = default;
 	Texture(Texture &&) = default;
 	Texture &operator=(const Texture &) = default;
 	Texture &operator=(Texture &&) = default;
@@ -577,6 +584,14 @@ class Texture {
 		if (texture_ == nullptr)
 			fail("SDL_CreateTexture");
 	}
+
+	Texture(Renderer &renderer, const std::string &filename)
+		: texture_(IMG_LoadTexture(renderer.get(), filename.c_str()), SDL_DestroyTexture)
+	{
+		if (texture_ == nullptr)
+			fail("IMG_LoadTexture");
+	}
+
 	void update(const Rect &rect, const std::span<Pixel> pixels)
 	{
 		if (SDL_UpdateTexture(get(), &rect, pixels.data(), pixels.size() * sizeof(Pixel)) != 0)
@@ -671,27 +686,27 @@ inline void Renderer::setTarget(Texture &texture)
 		fail("SDL_SetRenderTarget");
 }
 
-inline void Renderer::copy(Texture &texture, const Rect &src, const Rect &dst)
+inline void Renderer::copy(const Texture &texture, const Rect &src, const Rect &dst)
 {
 	if (SDL_RenderCopy(get(), texture.get(), &src, &dst) != 0)
 		fail("SDL_RenderCopy");
 }
 
-inline void Renderer::copy(Texture &texture, const Rect &src, const FRect &dst)
+inline void Renderer::copy(const Texture &texture, const Rect &src, const FRect &dst)
 {
 	if (SDL_RenderCopyF(get(), texture.get(), &src, &dst) != 0)
 		fail("SDL_RenderCopyF");
 }
 
-inline void Renderer::copy(Texture &texture, const Rect &src, const Rect &dst, double angle, const Point &center,
+inline void Renderer::copy(const Texture &texture, const Rect &src, const Rect &dst, double angle, const Point &center,
 			   RendererFlip flip)
 {
 	if (SDL_RenderCopyEx(get(), texture.get(), &src, &dst, angle, &center, flip) != 0)
 		fail("SDL_RenderCopyEx");
 }
 
-inline void Renderer::copy(Texture &texture, const Rect &src, const FRect &dst, double angle, const FPoint &center,
-			   RendererFlip flip)
+inline void Renderer::copy(const Texture &texture, const Rect &src, const FRect &dst, double angle,
+			   const FPoint &center, RendererFlip flip)
 {
 	if (SDL_RenderCopyExF(get(), texture.get(), &src, &dst, angle, &center, flip) != 0)
 		fail("SDL_RenderCopyExF");
@@ -699,6 +714,7 @@ inline void Renderer::copy(Texture &texture, const Rect &src, const FRect &dst, 
 
 class Font {
     private:
+	SDL sdl_{};
 	std::shared_ptr<TTF_Font> font_;
 
     public:

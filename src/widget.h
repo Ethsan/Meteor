@@ -1,3 +1,5 @@
+#pragma once
+
 #include "sdl.h"
 
 class Label {
