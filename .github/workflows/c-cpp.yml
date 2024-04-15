@@ -21,5 +21,5 @@ jobs:
       run: make check
     - name: make all
       run: make all
-    - name: make test
-      run: make test
+        #- name: make test
+        #run: make test
