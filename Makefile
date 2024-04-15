@@ -35,7 +35,10 @@ test_runner: $(TEST_OBJ) ## Builds the test runner
 compile_commands.json: clean ## Generates a compile_commands.json file for clangd
 	bear -- make all
 
-.PHONY: clean clean_all format test all check help
+.PHONY: clean clean_all format test all check help run
+
+run: $(OUT) ## Runs the main program
+	@./$(OUT)
 
 all: $(OUT) test_runner ## Builds the main program
 
