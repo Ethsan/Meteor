@@ -1,5 +1,6 @@
 SRC_DIR=src
 TEST_DIR=test
+ASSET_DIR=assets
 
 CC = g++
 
@@ -16,6 +17,9 @@ OBJ = $(SRC:.cpp=.o)
 
 TEST_SRC = $(shell find $(TEST_DIR) $(SRC_DIR) -iname *.cpp -not -name $(OUT).cpp)
 TEST_OBJ = $(TEST_SRC:.cpp=.o)
+
+SPRITE_SRC = $(shell find $(ASSET_DIR) -iname *.ase)
+SPRITE_OUT = $(SPRITE_SRC:.ase=.png)
 
 ifeq ($(DEBUG), 1)
 	CFLAGS += -g
@@ -35,7 +39,12 @@ test_runner: $(TEST_OBJ) ## Builds the test runner
 compile_commands.json: clean ## Generates a compile_commands.json file for clangd
 	bear -- make all
 
-.PHONY: clean clean_all format test all check help run
+%.png: %.ase
+	aseprite -b $< --save-as $@
+
+.PHONY: clean clean_all format test all check help run sprites
+
+sprites: $(SPRITE_OUT) ## Converts all .ase files to .png files
 
 run: $(OUT) ## Runs the main program
 	@./$(OUT)
@@ -46,7 +55,7 @@ clean: ## Removes the main program, object files, and the test runner
 	rm -f $(OUT) $(OBJ) $(TEST_OBJ) test_runner
 
 clean_all: clean ## Removes all generated files
-	rm -f compile_commands.json
+	rm -f compile_commands.json  $(SPRITE_OUT)
 
 format: ## Formats all .h and .cpp files using clang-format
 	clang-format -i $(shell find $(SRC_DIR) $(TEST_DIR) -iname *.h -o -iname *.cpp) --verbose
