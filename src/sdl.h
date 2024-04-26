@@ -48,6 +48,7 @@ using CommonEvent = SDL_CommonEvent;
 using Event = SDL_Event;
 
 using Keycode = SDL_Keycode;
+using Scancode = SDL_Scancode;
 using RendererFlip = SDL_RendererFlip;
 using PixelFormatEnum = SDL_PixelFormatEnum;
 
@@ -166,6 +167,14 @@ class SDL {
 		}
 	}
 };
+
+inline static bool isPressed(Scancode code)
+{
+	int len;
+	const Uint8 *state = SDL_GetKeyboardState(&len);
+
+	return state[code];
+}
 
 class Window {
     private:

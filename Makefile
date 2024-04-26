@@ -40,7 +40,7 @@ compile_commands.json: clean ## Generates a compile_commands.json file for clang
 	bear -- make all
 
 %.png: %.ase
-	aseprite -b $< --save-as $@
+	aseprite -b $< --sheet $@
 
 .PHONY: clean clean_all format test all check help run sprites
 
