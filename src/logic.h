@@ -121,22 +121,28 @@ class CollisionGrid { // grid collision class
 struct Paddle {
 	uint id;
 	float x, y;
-	float w, h;
+
+	static constexpr float w = 112, h = 60;
 };
 
 struct Ball {
 	uint id;
-	float x, y, r;
+	float x, y;
 	float vx, vy;
 
 	bool is_alive;
+
+	static constexpr float r = 16;
 };
 
 struct Brick {
 	uint id;
-	float x, y, w, h;
+	float x, y;
+
 	uint durability;
 	int last_hit;
+
+	static constexpr float w = 96, h = 32;
 };
 
 struct Empty {
@@ -171,8 +177,6 @@ class Logic {
 	}
 
 	void step(float dt);
-
-	void remove(uint id);
 
 	float getWidth() const
 	{
@@ -236,7 +240,7 @@ class Logic {
 	int ball_count = 0;
 	int tick = 0;
 
-	void addBall(float x, float y, uint size);
+	void addBall(float x, float y);
 	void addBrick(float x, float y, uint durability);
 	void addPaddle(float x, float y);
 

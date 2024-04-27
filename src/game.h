@@ -8,6 +8,9 @@ struct Assets {
 	SDL::Texture brick;
 	SDL::Texture ball;
 	SDL::Texture paddle;
+	SDL::Texture ship;
+	SDL::Texture ship_right;
+	SDL::Texture ship_left;
 };
 
 class Game : public State {
@@ -22,9 +25,11 @@ class Game : public State {
 		: window_(window)
 		, renderer_(renderer)
 		, logic_(window.getSize().first, window.getSize().second, 32)
-		, assets_{ { renderer_, "assets/asteroid.png" },
-			   { renderer_, "assets/ball.png" },
-			   { renderer_, "assets/shield.png" } }
+		, assets_{
+			{ renderer_, "assets/asteroid.png" },	{ renderer_, "assets/ball.png" },
+			{ renderer_, "assets/shield.png" },	{ renderer_, "assets/ship_forward.png" },
+			{ renderer_, "assets/ship_right.png" }, { renderer_, "assets/ship_left.png" },
+		}
 	{
 	}
 

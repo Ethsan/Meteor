@@ -15,6 +15,13 @@ struct RenderVisitor {
 	void operator()(const Brick &brick)
 	{
 		constexpr int max_durability = 5;
+		constexpr int dim = 96;
+		constexpr int sprite_w = 48;
+		constexpr int sprite_h = 16;
+
+		float scale_x = brick.w / sprite_w;
+		float scale_y = brick.h / sprite_h;
+
 		int off = 0;
 		if (brick.durability == 0) {
 			int anim = (logic.getTick() - brick.last_hit) / 4;
@@ -25,10 +32,10 @@ struct RenderVisitor {
 			off = max_durability - static_cast<int>(brick.durability);
 		}
 
-		SDL::Rect src = { off * 96, 0, 96, 96 };
+		SDL::Rect src = { off * dim, 0, dim, dim };
 
-		float w = 96 * brick.w / 48;
-		float h = 96 * brick.h / 16;
+		float w = dim * scale_x;
+		float h = dim * scale_y;
 		float x = brick.x + brick.w / 2 - w / 2;
 		float y = brick.y + brick.h / 2 - h / 2;
 
@@ -37,10 +44,16 @@ struct RenderVisitor {
 	}
 	void operator()(const Ball &ball)
 	{
+		constexpr int dim = 32;
+		constexpr int sprite_size = 16;
+
+		float scale = ball.r * 2 / sprite_size;
+
 		int off = logic.getTick() / 4 % 8;
 
-		SDL::Rect src = { off * 32, 0, 32, 32 };
-		float size = 32 * ball.r * 2 / 16;
+		SDL::Rect src = { off * dim, 0, dim, dim };
+
+		float size = dim * scale;
 		float x = ball.x - size / 2;
 		float y = ball.y - size / 2;
 		SDL::FRect dst = { x, y, size, size };
@@ -49,9 +62,44 @@ struct RenderVisitor {
 
 	void operator()(const Paddle &paddle)
 	{
-		SDL::Rect src = { 0, 0, assets.paddle.getWidth(), assets.paddle.getHeight() };
-		SDL::FRect dst = { paddle.x - paddle.w / 2, paddle.y - paddle.h / 2, paddle.w, paddle.h / 2 };
+		constexpr int dim = 64;
+		constexpr int sprite_w = 56;
+		constexpr int sprite_h = 33;
+
+		float scale_x = paddle.w / sprite_w;
+		float scale_y = paddle.h / sprite_h;
+
+		int off = 7;
+
+		SDL::Rect src = { dim * off, 0, dim, dim };
+
+		float w = dim * scale_x;
+		float h = dim * scale_y;
+		float x = paddle.x - w / 2;
+		float y = paddle.y - h / 2;
+
+		SDL::FRect dst = { x, y, w, h };
 		renderer.copy(assets.paddle, src, dst);
+
+		constexpr int dim_ship = 64;
+
+		off = logic.getTick() / 4 % 8;
+
+		w = dim_ship * scale_x;
+		h = dim_ship * scale_y;
+		y += 4 * scale_y;
+
+		dst = { x, y, w, h };
+		if (logic.dir == LEFT) {
+			src = { dim * (off + 1), 0, dim, dim };
+			renderer.copy(assets.ship_left, src, dst);
+		} else if (logic.dir == RIGHT) {
+			src = { dim * (off + 1), 0, dim, dim };
+			renderer.copy(assets.ship_right, src, dst);
+		} else {
+			src = { 0, 0, dim, dim };
+			renderer.copy(assets.ship, src, dst);
+		}
 	}
 };
 

@@ -439,10 +439,10 @@ void Logic::step(float dt)
 	}
 }
 
-void Logic::addBall(float x, float y, uint size)
+void Logic::addBall(float x, float y)
 {
 	uint id = objects.size();
-	Ball ball = { id, x, y, static_cast<float>(size), 0, 1, true };
+	Ball ball = { id, x, y, 0, 1, true };
 	objects.push_back(ball);
 
 	ball_count++;
@@ -451,7 +451,7 @@ void Logic::addBall(float x, float y, uint size)
 void Logic::addBrick(float x, float y, uint durability)
 {
 	uint id = objects.size();
-	Brick brick = { id, x, y, 96, 32, durability, -1 };
+	Brick brick = { id, x, y, durability, -1 };
 	objects.push_back(brick);
 
 	brick_count++;
@@ -460,7 +460,7 @@ void Logic::addBrick(float x, float y, uint durability)
 void Logic::addPaddle(float x, float y)
 {
 	uint id = objects.size();
-	Paddle paddle = { id, x, y, 112, 56 };
+	Paddle paddle = { id, x, y };
 	objects.push_back(paddle);
 }
 
@@ -474,11 +474,6 @@ void Logic::init()
 		}
 	}
 
-	addBall(width / 2, height / 2, 16);
+	addBall(width / 2, height / 2);
 	addPaddle(width / 2, height - 56);
-}
-
-void Logic::remove(uint uid)
-{
-	objects[uid] = Empty{ uid };
 }
