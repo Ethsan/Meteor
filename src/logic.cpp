@@ -25,7 +25,7 @@ void Logic::MoveVisitor::operator()(Ball &ball)
 	const float height = l.getHeight();
 
 	vec2f v = { ball.vx, ball.vy };
-	v = v.normalized() * 300;
+	v = v.normalized() * l.getSpeed();
 	ball.vx = v.x;
 	ball.vy = v.y;
 
@@ -255,7 +255,7 @@ void Logic::step(float dt)
 	if (bounce_count >= 4) {
 		int incr = bounce_count / 4;
 		bounce_count %= 4;
-		speed += incr * 50;
+		speed += incr;
 	}
 
 	if (brick_count <= 0) {
@@ -296,11 +296,11 @@ void Logic::init()
 	tick = 0;
 	score = 0;
 
-	speed = 200;
+	speed = 300;
 
-	for (int i = 0; i < 10; i++) {
-		for (int j = 0; j < 5; j++) {
-			addBrick(96 * i, 32 * j, 5);
+	for (float x = 0; x < 600; x += 100) {
+		for (float y = 0; y < 200; y += 40) {
+			addBrick(x, y, 1);
 		}
 	}
 

@@ -78,6 +78,16 @@ class Logic {
 		return tick;
 	}
 
+	int getScore() const
+	{
+		return score;
+	}
+
+	float getSpeed() const
+	{
+		return speed;
+	}
+
 	template <typename T> void visit(T &&visitor)
 	{
 		for (const auto &obj : objects) {
