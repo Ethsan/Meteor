@@ -240,6 +240,12 @@ class Logic {
 	int ball_count = 0;
 	int tick = 0;
 
+	int score = 0;
+	int combo = 0;
+
+	float speed = 200;
+	int bounce_count = 0;
+
 	void addBall(float x, float y);
 	void addBrick(float x, float y, uint durability);
 	void addPaddle(float x, float y);

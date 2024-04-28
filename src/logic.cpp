@@ -225,14 +225,17 @@ void Logic::MoveVisitor::operator()(Ball &ball)
 	if (ball.x - ball.r < 0) {
 		ball.x = ball.r;
 		ball.vx = -ball.vx;
+		l.bounce_count++;
 	}
 	if (ball.x + ball.r > width) {
 		ball.x = width - ball.r;
 		ball.vx = -ball.vx;
+		l.bounce_count++;
 	}
 	if (ball.y - ball.r < 0) {
 		ball.y = ball.r;
 		ball.vy = -ball.vy;
+		l.bounce_count++;
 	}
 	if (ball.y - ball.r > height) {
 		l.ball_count--;
@@ -343,6 +346,7 @@ void Logic::CollisionVisitor::operator()(Brick &brick, Ball &ball)
 	brick.last_hit = l.getTick();
 	if (--brick.durability == 0) {
 		l.brick_count--;
+		l.score += 100;
 	};
 
 	vec2f v = { ball.vx, ball.vy };
@@ -354,6 +358,8 @@ void Logic::CollisionVisitor::operator()(Brick &brick, Ball &ball)
 
 	ball.vx = v_t.x + v_n_abs.x;
 	ball.vy = v_t.y + v_n_abs.y;
+
+	l.bounce_count++;
 }
 
 void Logic::CollisionVisitor::operator()(Ball &ball1, Ball &ball2)
@@ -383,6 +389,8 @@ void Logic::CollisionVisitor::operator()(Ball &ball1, Ball &ball2)
 	ball1.vy = v2n.y + v1t.y;
 	ball2.vx = v1n.x + v2t.x;
 	ball2.vy = v1n.y + v2t.y;
+
+	l.bounce_count++;
 }
 
 void Logic::CollisionVisitor::operator()(Paddle &paddle, Ball &ball)
@@ -414,6 +422,8 @@ void Logic::CollisionVisitor::operator()(Ball &ball, Paddle &paddle)
 
 	ball.vx = v_t.x + new_v_n.x;
 	ball.vy = v_t.y + new_v_n.y;
+
+	l.bounce_count++;
 }
 
 void Logic::step(float dt)
@@ -430,6 +440,12 @@ void Logic::step(float dt)
 		auto &obj1 = objects[collision.first];
 		auto &obj2 = objects[collision.second];
 		std::visit(CollisionVisitor{ *this }, obj1, obj2);
+	}
+
+	if (bounce_count >= 4) {
+		int incr = bounce_count / 4;
+		bounce_count %= 4;
+		speed += incr * 50;
 	}
 
 	if (brick_count <= 0) {
@@ -468,6 +484,10 @@ void Logic::init()
 {
 	state = RUNNING;
 	tick = 0;
+	score = 0;
+
+	speed = 200;
+
 	for (int i = 0; i < 10; i++) {
 		for (int j = 0; j < 5; j++) {
 			addBrick(96 * i, 32 * j, 5);
