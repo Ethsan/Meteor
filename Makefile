@@ -14,6 +14,7 @@ OUT = bricked
 
 SRC = $(shell find $(SRC_DIR) -iname *.cpp)
 OBJ = $(SRC:.cpp=.o)
+HEADERS = $(shell find $(SRC_DIR) -iname *.h)
 
 TEST_SRC = $(shell find $(TEST_DIR) $(SRC_DIR) -iname *.cpp -not -name $(OUT).cpp)
 TEST_OBJ = $(TEST_SRC:.cpp=.o)
@@ -30,7 +31,7 @@ endif
 $(OUT): $(OBJ) ## Builds the main program
 	$(CC) $(CFLAGS) $(OBJ) -o $@ $(LDFLAGS)
 
-%.o: %.cpp
+%.o: %.cpp $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 test_runner: $(TEST_OBJ) ## Builds the test runner
