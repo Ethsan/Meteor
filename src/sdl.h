@@ -442,9 +442,82 @@ class Renderer {
 			fail("SDL_RenderGeometry");
 	}
 
-	void getClipRect(Rect &rect)
+	void getLogicalSize(int &w, int &h) const
 	{
+		SDL_RenderGetLogicalSize(get(), &w, &h);
+	}
+
+	void setLogicalSize(int w, int h)
+	{
+		if (SDL_RenderSetLogicalSize(get(), w, h) != 0)
+			fail("SDL_RenderSetLogicalSize");
+	}
+
+	bool getIntegerScale() const
+	{
+		return SDL_RenderGetIntegerScale(get()) == SDL_TRUE;
+	}
+
+	void setIntegerScale(bool enable)
+	{
+		if (SDL_RenderSetIntegerScale(get(), enable ? SDL_TRUE : SDL_FALSE) != 0)
+			fail("SDL_RenderSetIntegerScale");
+	}
+
+	Rect getViewport() const
+	{
+		Rect rect;
+		SDL_RenderGetViewport(get(), &rect);
+		return rect;
+	}
+
+	void setViewport(const Rect &rect)
+	{
+		if (SDL_RenderSetViewport(get(), &rect) != 0)
+			fail("SDL_RenderSetViewport");
+	}
+
+	Rect getClipRect() const
+	{
+		Rect rect;
 		SDL_RenderGetClipRect(get(), &rect);
+		return rect;
+	}
+
+	void setClipRect(const Rect &rect)
+	{
+		if (SDL_RenderSetClipRect(get(), &rect) != 0)
+			fail("SDL_RenderSetClipRect");
+	}
+
+	bool isClipEnabled() const
+	{
+		return SDL_RenderIsClipEnabled(get()) == SDL_TRUE;
+	}
+
+	void getScale(float &scaleX, float &scaleY) const
+	{
+		SDL_RenderGetScale(get(), &scaleX, &scaleY);
+	}
+
+	void setScale(float scaleX, float scaleY)
+	{
+		if (SDL_RenderSetScale(get(), scaleX, scaleY) != 0)
+			fail("SDL_RenderSetScale");
+	}
+
+	FPoint windowToLogical(const Point &point) const
+	{
+		FPoint fpoint;
+		SDL_RenderWindowToLogical(get(), point.x, point.y, &fpoint.x, &fpoint.y);
+		return fpoint;
+	}
+
+	Point logicalToWindow(const FPoint &fpoint) const
+	{
+		Point point;
+		SDL_RenderLogicalToWindow(get(), fpoint.x, fpoint.y, &point.x, &point.y);
+		return point;
 	}
 };
 

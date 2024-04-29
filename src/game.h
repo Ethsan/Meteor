@@ -28,7 +28,7 @@ class Game : public State {
 	Game(const SDL::Window &window, const SDL::Renderer &renderer)
 		: window_(window)
 		, renderer_(renderer)
-		, logic_(600, 600)
+		, logic_(300, 300)
 		, assets_{ .brick = { renderer_, "assets/asteroid.png" },
 			   .ball = { renderer_, "assets/ball.png" },
 			   .paddle = { renderer_, "assets/shield.png" },
@@ -37,7 +37,7 @@ class Game : public State {
 			   .ship_left = { renderer_, "assets/ship_left.png" },
 			   .ui = { renderer_, "assets/ui.png" },
 			   .bg = { renderer_, "assets/bg.png" },
-			   .font = SDL::Font("assets/Roboto.ttf", 24) } {};
+			   .font = SDL::Font("assets/Roboto.ttf", 12) } {};
 
 	std::shared_ptr<State> operator()() override;
 

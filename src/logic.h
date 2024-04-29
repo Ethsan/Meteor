@@ -7,7 +7,7 @@ struct Paddle {
 	int id;
 	float x, y;
 
-	static constexpr float w = 112, h = 60;
+	static constexpr float w = 56, h = 30;
 };
 
 struct Ball {
@@ -17,7 +17,7 @@ struct Ball {
 
 	bool is_alive;
 
-	static constexpr float r = 16;
+	static constexpr float r = 8;
 };
 
 struct Brick {
@@ -27,7 +27,7 @@ struct Brick {
 	uint durability;
 	int last_hit;
 
-	static constexpr float w = 96, h = 32;
+	static constexpr float w = 48, h = 16;
 };
 
 struct Empty {
@@ -113,7 +113,7 @@ class Logic {
 
 	std::vector<Ball> balls{};
 	std::vector<Brick> bricks{};
-	Paddle paddle{ next_id++, width / 2, height - 64 };
+	Paddle paddle{ next_id++, width / 2, height - Paddle::h };
 
 	int brick_count = 0;
 	int ball_count = 0;
@@ -122,7 +122,7 @@ class Logic {
 	int score = 0;
 	int combo = 0;
 
-	float speed = 200;
+	float speed = 150;
 	int bounce_count = 0;
 
 	int addBall(float x, float y);

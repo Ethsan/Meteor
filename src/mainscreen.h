@@ -27,10 +27,5 @@ class MainScreen : public State {
 	{
 	}
 
-	MainScreen(SDL::Window &window)
-		: MainScreen(window, SDL::Renderer(window, -1, SDL_RENDERER_ACCELERATED))
-	{
-	}
-
 	std::shared_ptr<State> operator()() override;
 };

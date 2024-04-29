@@ -17,11 +17,6 @@ struct RenderVisitor {
 	{
 		constexpr int max_durability = 5;
 		constexpr int dim = 96;
-		constexpr int sprite_w = 48;
-		constexpr int sprite_h = 16;
-
-		float scale_x = brick.w / sprite_w;
-		float scale_y = brick.h / sprite_h;
 
 		int off = 0;
 		if (brick.durability == 0) {
@@ -35,62 +30,45 @@ struct RenderVisitor {
 
 		SDL::Rect src = { off * dim, 0, dim, dim };
 
-		float w = dim * scale_x;
-		float h = dim * scale_y;
-		float x = brick.x + brick.w / 2 - w / 2;
-		float y = brick.y + brick.h / 2 - h / 2;
+		float x = brick.x + brick.w / 2 - dim * 0.5;
+		float y = brick.y + brick.h / 2 - dim * 0.5;
 
-		SDL::FRect dst = { x, y, w, h };
+		SDL::FRect dst = { x, y, dim, dim };
 		renderer.copy(assets.brick, src, dst);
 	}
 	void operator()(const Ball &ball)
 	{
 		constexpr int dim = 32;
-		constexpr int sprite_size = 16;
-
-		float scale = ball.r * 2 / sprite_size;
 
 		int off = logic.getTick() / 4 % 8;
 
 		SDL::Rect src = { off * dim, 0, dim, dim };
 
-		float size = dim * scale;
-		float x = ball.x - size / 2;
-		float y = ball.y - size / 2;
-		SDL::FRect dst = { x, y, size, size };
+		float x = ball.x - dim * 0.5;
+		float y = ball.y - dim * 0.5;
+		SDL::FRect dst = { x, y, dim, dim };
 		renderer.copy(assets.ball, src, dst);
 	}
 
 	void operator()(const Paddle &paddle)
 	{
 		constexpr int dim = 64;
-		constexpr int sprite_w = 56;
-		constexpr int sprite_h = 33;
-
-		float scale_x = paddle.w / sprite_w;
-		float scale_y = paddle.h / sprite_h;
 
 		int off = 7;
 
 		SDL::Rect src = { dim * off, 0, dim, dim };
 
-		float w = dim * scale_x;
-		float h = dim * scale_y;
-		float x = paddle.x - w / 2;
-		float y = paddle.y - h / 2;
+		float x = paddle.x - dim * 0.5;
+		float y = paddle.y - dim * 0.5;
 
-		SDL::FRect dst = { x, y, w, h };
+		SDL::FRect dst = { x, y, dim, dim };
 		renderer.copy(assets.paddle, src, dst);
-
-		constexpr int dim_ship = 64;
 
 		off = logic.getTick() / 4 % 8;
 
-		w = dim_ship * scale_x;
-		h = dim_ship * scale_y;
-		y += 4 * scale_y;
+		y += 4;
 
-		dst = { x, y, w, h };
+		dst = { x, y, dim, dim };
 		if (logic.dir == LEFT) {
 			src = { dim * (off + 1), 0, dim, dim };
 			renderer.copy(assets.ship_left, src, dst);
@@ -141,27 +119,26 @@ std::shared_ptr<State> Game::operator()()
 void Game::render_menu()
 {
 	constexpr int dim = 32;
-	constexpr int size = 64;
 
 	SDL::Rect corner = { 0, 0, dim, dim };
 	SDL::Rect border_left = { 2 * dim, 0, dim, dim };
 	SDL::Rect bg = { 3 * dim, 0, dim, dim };
 
-	SDL::FRect dst = { 600 - static_cast<float>(size) / 2, -static_cast<float>(size) / 2, size, size };
+	SDL::FRect dst = { 300 - static_cast<float>(dim) / 2, -static_cast<float>(dim) / 2, dim, dim };
 	renderer_.copy(assets_.ui, corner, dst, 0, { 0, 0 }, SDL_FLIP_NONE);
 
-	for (dst.y = size * .5; dst.y < 600 - size; dst.y += size) {
+	for (dst.y = dim * .5; dst.y < 300 - dim; dst.y += dim) {
 		renderer_.copy(assets_.ui, border_left, dst, 0, { 0, 0 }, SDL_FLIP_NONE);
 	}
 
-	dst.y = 600 - static_cast<float>(size) * 3. / 2;
+	dst.y = 300 - static_cast<float>(dim) * 3. / 2;
 	renderer_.copy(assets_.ui, border_left, dst, 0, { 0, 0 }, SDL_FLIP_NONE);
 
-	dst.y += size;
+	dst.y += dim;
 	renderer_.copy(assets_.ui, corner, dst, 0, { 0, 0 }, SDL_FLIP_VERTICAL);
 
-	for (dst.x = 600 + size * .5; dst.x < 800; dst.x += size) {
-		for (dst.y = 0; dst.y < 600; dst.y += size) {
+	for (dst.x = 300 + dim * .5; dst.x < 400; dst.x += dim) {
+		for (dst.y = 0; dst.y < 300; dst.y += dim) {
 			renderer_.copy(assets_.ui, bg, dst, 0, { 0, 0 }, SDL_FLIP_NONE);
 		}
 	}
@@ -170,21 +147,21 @@ void Game::render_menu()
 		SDL::Texture(renderer_, assets_.font.renderText("Score: " + std::to_string(logic_.getScore()),
 								{ 255, 255, 255, 255 }));
 	SDL::Rect scoreRect = score.getRect();
-	SDL::FRect scoreDst = { 600 + size * .5, static_cast<float>(size) * 3. / 2, static_cast<float>(scoreRect.w),
+	SDL::FRect scoreDst = { 300 + dim * .5, static_cast<float>(dim) * 3. / 2, static_cast<float>(scoreRect.w),
 				static_cast<float>(scoreRect.h) };
 
 	SDL::Texture speed = SDL::Texture(
 		renderer_, assets_.font.renderText("Speed: " + std::to_string(static_cast<int>(logic_.getSpeed())),
 						   { 255, 255, 255, 255 }));
 	SDL::Rect speedRect = speed.getRect();
-	SDL::FRect speedDst = { 600 + size * .5, static_cast<float>(size * 3. / 2 + scoreRect.h),
+	SDL::FRect speedDst = { 300 + dim * .5, static_cast<float>(dim * 3. / 2 + scoreRect.h),
 				static_cast<float>(speedRect.w), static_cast<float>(speedRect.h) };
 
 	SDL::Texture times =
 		SDL::Texture(renderer_, assets_.font.renderText("Time: " + std::to_string(logic_.getTick() / 60),
 								{ 255, 255, 255, 255 }));
 	SDL::Rect timesRect = times.getRect();
-	SDL::FRect timesDst = { 600 + size * .5, static_cast<float>(size * 3. / 2 + scoreRect.h + speedRect.h),
+	SDL::FRect timesDst = { 300 + dim * .5, static_cast<float>(dim * 3. / 2 + scoreRect.h + speedRect.h),
 				static_cast<float>(timesRect.w), static_cast<float>(timesRect.h) };
 
 	renderer_.copy(score, scoreRect, scoreDst);
@@ -197,8 +174,8 @@ void Game::render()
 	SDL::Rect src_bg = { 0, 0, assets_.bg.getWidth(), assets_.bg.getHeight() };
 	SDL::FRect dst_bg = { 0, 0, static_cast<float>(src_bg.w), static_cast<float>(src_bg.h) };
 
-	for (dst_bg.y = 0; dst_bg.y < 800; dst_bg.y += src_bg.h) {
-		for (dst_bg.x = 0; dst_bg.x < 800; dst_bg.x += src_bg.w)
+	for (dst_bg.y = 0; dst_bg.y < 400; dst_bg.y += src_bg.h) {
+		for (dst_bg.x = 0; dst_bg.x < 400; dst_bg.x += src_bg.w)
 			renderer_.copy(assets_.bg, src_bg, dst_bg);
 	}
 

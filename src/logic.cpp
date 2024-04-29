@@ -254,7 +254,7 @@ void Logic::step(float dt)
 	if (bounce_count >= 4) {
 		int incr = bounce_count / 4;
 		bounce_count %= 4;
-		speed += incr;
+		speed += incr * .01 * height;
 	}
 
 	if (brick_count <= 0) {
@@ -294,10 +294,10 @@ void Logic::init()
 	tick = 0;
 	score = 0;
 
-	speed = 300;
+	speed = height / 2;
 
-	for (float x = 0; x < 600; x += 100) {
-		for (float y = 0; y < 200; y += 40) {
+	for (float x = 0; x < width; x += 50) {
+		for (float y = 0; y < height - 150; y += 20) {
 			addBrick(x, y, 1);
 		}
 	}
