@@ -2,30 +2,18 @@
 #include "vec2.h"
 
 #include <limits>
-#include <vector>
 #include <cmath>
 
-void Logic::MoveVisitor::operator()(auto &)
-{
-	return;
-}
-
-void Logic::MoveVisitor::operator()(Brick &brick)
-{
-	if (brick.durability == 0)
-		return;
-	l.collisionGrid_.addObject(brick.x, brick.y, brick.x + brick.w, brick.y + brick.h, brick.id);
-}
-
-void Logic::MoveVisitor::operator()(Ball &ball)
+template <> void Logic::move(Ball &ball, float dt)
 {
 	if (!ball.is_alive)
 		return;
-	const float width = l.getWidth();
-	const float height = l.getHeight();
+
+	const float width = getWidth();
+	const float height = getHeight();
 
 	vec2f v = { ball.vx, ball.vy };
-	v = v.normalized() * l.getSpeed();
+	v = v.normalized() * getSpeed();
 	ball.vx = v.x;
 	ball.vy = v.y;
 
@@ -35,35 +23,35 @@ void Logic::MoveVisitor::operator()(Ball &ball)
 	if (ball.x - ball.r < 0) {
 		ball.x = ball.r;
 		ball.vx = -ball.vx;
-		l.bounce_count++;
+		bounce_count++;
 	}
 	if (ball.x + ball.r > width) {
 		ball.x = width - ball.r;
 		ball.vx = -ball.vx;
-		l.bounce_count++;
+		bounce_count++;
 	}
 	if (ball.y - ball.r < 0) {
 		ball.y = ball.r;
 		ball.vy = -ball.vy;
-		l.bounce_count++;
+		bounce_count++;
 	}
+
 	if (ball.y - ball.r > height) {
-		l.ball_count--;
+		ball_count--;
 		ball.is_alive = false;
 	}
-	l.collisionGrid_.addObject(ball.x - ball.r, ball.y - ball.r, ball.x + ball.r, ball.y + ball.r, ball.id);
 }
 
-void Logic::MoveVisitor::operator()(Paddle &paddle)
+template <> void Logic::move(Paddle &paddle, float dt)
 {
-	const float width = l.getWidth();
-	const float height = l.getHeight();
+	const float width = getWidth();
+	const float height = getHeight();
 
-	if (l.dir == NONE) {
+	if (dir == NONE) {
 		;
-	} else if (l.dir == LEFT) {
+	} else if (dir == LEFT) {
 		paddle.x -= 200 * dt;
-	} else if (l.dir == RIGHT) {
+	} else if (dir == RIGHT) {
 		paddle.x += 200 * dt;
 	}
 
@@ -79,8 +67,6 @@ void Logic::MoveVisitor::operator()(Paddle &paddle)
 	if (paddle.y + paddle.h / 2 > height) {
 		paddle.y = height - paddle.h / 2;
 	}
-	l.collisionGrid_.addObject(paddle.x - paddle.w / 2, paddle.y - paddle.h / 2, paddle.x + paddle.w / 2,
-				   paddle.y + paddle.h / 2, paddle.id);
 }
 
 vec2f closest_point(vec2f point, std::span<vec2f> vertices)
@@ -98,18 +84,19 @@ vec2f closest_point(vec2f point, std::span<vec2f> vertices)
 	return closest;
 }
 
-void Logic::CollisionVisitor::operator()(auto &, auto &)
+template <> bool Logic::collide(Ball &ball, Brick &brick)
 {
-	return;
-}
+	if (brick.durability == 0)
+		return false;
 
-void Logic::CollisionVisitor::operator()(Ball &ball, Brick &brick)
-{
-	this->Logic::CollisionVisitor::operator()(brick, ball);
-}
+	// simple distance check
+	float diag = std::sqrt(brick.h * brick.w);
+	vec2f vec = { ball.x - brick.x - brick.w / 2, ball.y - brick.y - brick.h / 2 };
 
-void Logic::CollisionVisitor::operator()(Brick &brick, Ball &ball)
-{
+	if (vec.norm() > diag + ball.r) {
+		return false;
+	}
+
 	std::array<vec2f, 4> vertices = { vec2f{ brick.x + brick.w, brick.y },
 					  vec2f{ brick.x + brick.w, brick.y + brick.h },
 					  vec2f{ brick.x, brick.y + brick.h }, vec2f{ brick.x, brick.y } };
@@ -140,12 +127,12 @@ void Logic::CollisionVisitor::operator()(Brick &brick, Ball &ball)
 		float circle_min = proj - ball.r;
 
 		if (rect_min > circle_max || rect_max < circle_min) {
-			return;
+			return false;
 		}
 
 		float norm = std::abs(circle_min - rect_max);
 		if (norm == 0) { // weird edge case where the ball is exactly on the edge of the brick
-			return;
+			return false;
 		}
 		if (norm < min_overlap) {
 			min_overlap = norm;
@@ -153,10 +140,10 @@ void Logic::CollisionVisitor::operator()(Brick &brick, Ball &ball)
 		}
 	}
 
-	brick.last_hit = l.getTick();
+	brick.last_hit = getTick();
 	if (--brick.durability == 0) {
-		l.brick_count--;
-		l.score += 100;
+		brick_count--;
+		score += 100;
 	};
 
 	vec2f v = { ball.vx, ball.vy };
@@ -169,16 +156,19 @@ void Logic::CollisionVisitor::operator()(Brick &brick, Ball &ball)
 	ball.vx = v_t.x + v_n_abs.x;
 	ball.vy = v_t.y + v_n_abs.y;
 
-	l.bounce_count++;
+	bounce_count++;
+
+	return true;
 }
 
-void Logic::CollisionVisitor::operator()(Ball &ball1, Ball &ball2)
+template <> bool Logic::collide(Ball &ball1, Ball &ball2)
 {
 	vec2f vec = { ball1.x - ball2.x, ball1.y - ball2.y };
-	vec2f vec_unit = vec.normalized();
 	if (vec.norm() > ball1.r + ball2.r) {
-		return;
+		return false;
 	}
+
+	vec2f vec_unit = vec.normalized();
 
 	auto intersection = (ball1.r + ball2.r - vec.norm()) / 2;
 
@@ -200,23 +190,22 @@ void Logic::CollisionVisitor::operator()(Ball &ball1, Ball &ball2)
 	ball2.vx = v1n.x + v2t.x;
 	ball2.vy = v1n.y + v2t.y;
 
-	l.bounce_count++;
+	bounce_count++;
+
+	return true;
 }
 
-void Logic::CollisionVisitor::operator()(Paddle &paddle, Ball &ball)
-{
-	return this->Logic::CollisionVisitor::operator()(ball, paddle);
-}
-
-void Logic::CollisionVisitor::operator()(Ball &ball, Paddle &paddle)
+template <> bool Logic::collide(Ball &ball, Paddle &paddle)
 {
 	vec2f vec = { ball.x - paddle.x, ball.y - paddle.y };
-	vec2f vec_unit = vec.normalized();
+	if (vec.norm() > ball.r + std::max(paddle.h, paddle.w) / 2)
+		return false;
 
+	vec2f vec_unit = vec.normalized();
 	vec2f ellipse_proj = { vec_unit.x * paddle.w / 2, vec_unit.y * paddle.h / 2 };
 
 	if (vec.norm() > ball.r + ellipse_proj.norm()) {
-		return;
+		return false;
 	}
 
 	auto intersection = (ball.r + ellipse_proj.norm() - vec.norm());
@@ -233,23 +222,33 @@ void Logic::CollisionVisitor::operator()(Ball &ball, Paddle &paddle)
 	ball.vx = v_t.x + new_v_n.x;
 	ball.vy = v_t.y + new_v_n.y;
 
-	l.bounce_count++;
+	bounce_count++;
+	return true;
 }
 
 void Logic::step(float dt)
 {
 	tick++;
-	collisionGrid_.clear();
 
-	float temp = 0;
-	for (auto &obj : objects) {
-		std::visit(MoveVisitor{ dt, *this, temp }, obj);
+	for (auto &ball : balls) {
+		move(ball, dt);
 	}
 
-	for (const auto &collision : collisionGrid_.getAllCollisions()) {
-		auto &obj1 = objects[collision.first];
-		auto &obj2 = objects[collision.second];
-		std::visit(CollisionVisitor{ *this }, obj1, obj2);
+	move(paddle, dt);
+
+	for (size_t i = 0; i < balls.size(); i++) {
+		Ball &ball = balls[i];
+
+		for (auto &brick : bricks) {
+			collide(ball, brick);
+		}
+
+		for (size_t j = i + 1; j < balls.size(); j++) {
+			auto &other = balls[j];
+			collide(ball, other);
+		}
+
+		collide(ball, paddle);
 	}
 
 	if (bounce_count >= 4) {
@@ -265,29 +264,28 @@ void Logic::step(float dt)
 	}
 }
 
-void Logic::addBall(float x, float y)
+int Logic::addBall(float x, float y)
 {
-	uint id = objects.size();
+	int id = next_id++;
+
 	Ball ball = { id, x, y, 0, 1, true };
-	objects.push_back(ball);
+	balls.emplace_back(ball);
 
 	ball_count++;
+
+	return id;
 }
 
-void Logic::addBrick(float x, float y, uint durability)
+int Logic::addBrick(float x, float y, uint durability)
 {
-	uint id = objects.size();
+	int id = next_id++;
+
 	Brick brick = { id, x, y, durability, -1 };
-	objects.push_back(brick);
+	bricks.emplace_back(brick);
 
 	brick_count++;
-}
 
-void Logic::addPaddle(float x, float y)
-{
-	uint id = objects.size();
-	Paddle paddle = { id, x, y };
-	objects.push_back(paddle);
+	return id;
 }
 
 void Logic::init()
@@ -305,5 +303,4 @@ void Logic::init()
 	}
 
 	addBall(width / 2, height / 2);
-	addPaddle(width / 2, height - 56);
 }

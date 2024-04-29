@@ -4,14 +4,14 @@
 #include <variant>
 
 struct Paddle {
-	uint id;
+	int id;
 	float x, y;
 
 	static constexpr float w = 112, h = 60;
 };
 
 struct Ball {
-	uint id;
+	int id;
 	float x, y;
 	float vx, vy;
 
@@ -21,7 +21,7 @@ struct Ball {
 };
 
 struct Brick {
-	uint id;
+	int id;
 	float x, y;
 
 	uint durability;
@@ -33,6 +33,8 @@ struct Brick {
 struct Empty {
 	uint id;
 };
+
+template <typename T> concept Object = std::is_same_v<T, Ball> || std::is_same_v<T, Brick> || std::is_same_v<T, Paddle>;
 
 enum Paddle_dir {
 	NONE,
@@ -51,10 +53,8 @@ class Logic {
 
 	Paddle_dir dir = NONE;
 
-	Logic(float width, float height, float cell_size)
-		: objects()
-		, collisionGrid_(width, height, cell_size)
-		, width(width)
+	Logic(float width, float height)
+		: width(width)
 		, height(height)
 
 	{
@@ -90,9 +90,13 @@ class Logic {
 
 	template <typename T> void visit(T &&visitor)
 	{
-		for (const auto &obj : objects) {
-			std::visit(std::forward<T>(visitor), obj);
+		for (auto &ball : balls) {
+			visitor(ball);
 		}
+		for (auto &brick : bricks) {
+			visitor(brick);
+		}
+		visitor(paddle);
 	}
 
 	GameState getState() const
@@ -101,36 +105,16 @@ class Logic {
 	}
 
     private:
-	struct CollisionVisitor {
-		Logic &l;
-
-		void operator()(auto &, auto &);
-		void operator()(Ball &ball, Brick &brick);
-		void operator()(Brick &brick, Ball &ball);
-		void operator()(Ball &ball1, Ball &ball2);
-		void operator()(Paddle &paddle, Ball &ball);
-		void operator()(Ball &ball, Paddle &paddle);
-	};
-
-	struct MoveVisitor {
-		float dt;
-		Logic &l;
-		float &temp;
-
-		void operator()(auto &);
-		void operator()(Ball &ball);
-		void operator()(Brick &brick);
-		void operator()(Paddle &paddle);
-	};
-
-	friend CollisionVisitor;
-	friend MoveVisitor;
+	float width, height;
 
 	GameState state = RUNNING;
-	std::vector<ObjectVariant> objects{};
-	CollisionGrid collisionGrid_;
 
-	float width, height;
+	int next_id = 0;
+
+	std::vector<Ball> balls{};
+	std::vector<Brick> bricks{};
+	Paddle paddle{ next_id++, width / 2, height - 64 };
+
 	int brick_count = 0;
 	int ball_count = 0;
 	int tick = 0;
@@ -141,9 +125,12 @@ class Logic {
 	float speed = 200;
 	int bounce_count = 0;
 
-	void addBall(float x, float y);
-	void addBrick(float x, float y, uint durability);
-	void addPaddle(float x, float y);
+	int addBall(float x, float y);
+	int addBrick(float x, float y, uint durability);
+
+	template <Object T> void move(T &obj, float dt);
+
+	template <Object T1, Object T2> bool collide(T1 &a, T2 &b);
 
 	void init();
 };

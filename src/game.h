@@ -28,7 +28,7 @@ class Game : public State {
 	Game(const SDL::Window &window, const SDL::Renderer &renderer)
 		: window_(window)
 		, renderer_(renderer)
-		, logic_(600, 600, 32)
+		, logic_(600, 600)
 		, assets_{ .brick = { renderer_, "assets/asteroid.png" },
 			   .ball = { renderer_, "assets/ball.png" },
 			   .paddle = { renderer_, "assets/shield.png" },
