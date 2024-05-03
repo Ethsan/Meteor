@@ -268,7 +268,7 @@ class Window {
 	Rect getRect() const
 	{
 		Rect rect;
-		SDL_GetWindowPosition(get(), &rect.x, &rect.y);
+		//SDL_GetWindowPosition(get(), &rect.x, &rect.y);
 		SDL_GetWindowSize(get(), &rect.w, &rect.h);
 		return rect;
 	}

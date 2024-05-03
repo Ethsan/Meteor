@@ -5,13 +5,15 @@
 class Label {
     private:
 	SDL::Texture texture_;
+	SDL::Texture texture_h_;
 
     public:
 	int x, y;
 
-	Label(const std::string &text, const SDL::Font &font, const SDL::Color &color, SDL::Renderer &renderer, int x,
-	      int y)
+	Label(const std::string &text, const SDL::Font &font, const SDL::Color &color, const SDL::Color &color_h,
+	      SDL::Renderer &renderer, int x, int y)
 		: texture_(renderer, font.renderText(text, color))
+		, texture_h_(renderer, font.renderText(text, color_h))
 		, x(x)
 		, y(y)
 	{
@@ -22,6 +24,16 @@ class Label {
 		const SDL::Rect textureRect = texture_.getRect();
 		const SDL::Rect rect = { x, y, textureRect.w, textureRect.h };
 		renderer.copy(texture_, textureRect, rect);
+	}
+
+	void draw(SDL::Renderer &renderer, bool highlighted)
+	{
+		if (highlighted) {
+			const SDL::Rect textureRect = texture_h_.getRect();
+			const SDL::Rect rect = { x, y, textureRect.w, textureRect.h };
+			renderer.copy(texture_h_, textureRect, rect);
+		} else
+			draw(renderer);
 	}
 
 	void setText(const std::string &text, const SDL::Font &font, const SDL::Color &color, SDL::Renderer &renderer)
