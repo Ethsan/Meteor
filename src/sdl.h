@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SDL_stdinc.h"
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
@@ -51,10 +52,26 @@ using Keycode = SDL_Keycode;
 using Scancode = SDL_Scancode;
 using RendererFlip = SDL_RendererFlip;
 using PixelFormatEnum = SDL_PixelFormatEnum;
+using BlendMode = SDL_BlendMode;
 
 inline std::string getError()
 {
 	return SDL_GetError();
+}
+
+inline Uint32 getMouseState(int &x, int &y)
+{
+	return SDL_GetMouseState(&x, &y);
+}
+
+inline Uint32 getGlobalMouseState(int &x, int &y)
+{
+	return SDL_GetGlobalMouseState(&x, &y);
+}
+
+inline Uint32 getRelativeMouseState(int &x, int &y)
+{
+	return SDL_GetRelativeMouseState(&x, &y);
 }
 
 [[noreturn]] inline void fail(const std::string &msg)
@@ -317,6 +334,20 @@ class Renderer {
 	void present()
 	{
 		SDL_RenderPresent(get());
+	}
+
+	void setDrawBlendMode(BlendMode mode)
+	{
+		if (SDL_SetRenderDrawBlendMode(get(), mode) != 0)
+			fail("SDL_SetRenderDrawBlendMode");
+	}
+
+	BlendMode getDrawBlendMode() const
+	{
+		SDL_BlendMode mode;
+		if (SDL_GetRenderDrawBlendMode(get(), &mode) != 0)
+			fail("SDL_GetRenderDrawBlendMode");
+		return mode;
 	}
 
 	void setDrawColor(Uint8 r, Uint8 g, Uint8 b, Uint8 a)

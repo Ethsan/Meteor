@@ -14,13 +14,6 @@ struct Assets {
 	SDL::Texture ship_left;
 	SDL::Texture ui;
 	SDL::Texture bg;
-	SDL::Font font;
-};
-
-struct Text {
-	Label score;
-	Label speed;
-	Label times;
 };
 
 class Game : public State {
@@ -35,11 +28,12 @@ class Game : public State {
 			   .ship = { renderer_, "assets/ship_forward.png" },
 			   .ship_right = { renderer_, "assets/ship_right.png" },
 			   .ship_left = { renderer_, "assets/ship_left.png" },
-			   .ui = { renderer_, "assets/ui.png" },
-			   .bg = { renderer_, "assets/bg.png" },
-			   .font = SDL::Font("assets/Roboto.ttf", 12) } {};
+			   .ui = { renderer_, "assets/side.png" },
+			   .bg = { renderer_, "assets/bg.png" } }
+		, ui_factory_(renderer_){};
 
 	std::shared_ptr<State> operator()() override;
+	void draw();
 
     private:
 	SDL::Window window_;
@@ -47,7 +41,11 @@ class Game : public State {
 
 	Logic logic_;
 	Assets assets_;
+	UI_Factory ui_factory_;
 
-	void render();
-	void render_menu();
+	std::optional<std::shared_ptr<State> > pause();
+	std::optional<std::shared_ptr<State> > resume();
+	std::shared_ptr<State> end();
+
+	friend class Pause;
 };

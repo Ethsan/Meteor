@@ -88,6 +88,11 @@ class Logic {
 		return speed;
 	}
 
+	int getLives() const
+	{
+		return lives;
+	}
+
 	template <typename T> void visit(T &&visitor)
 	{
 		for (auto &ball : balls) {
@@ -124,6 +129,8 @@ class Logic {
 
 	float speed = 150;
 	int bounce_count = 0;
+
+	int lives = 3;
 
 	int addBall(float x, float y);
 	int addBrick(float x, float y, uint durability);
