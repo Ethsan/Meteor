@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SDL_mouse.h"
 #include "SDL_stdinc.h"
 #include <SDL.h>
 #include <SDL_image.h>
@@ -191,6 +192,14 @@ inline static bool isPressed(Scancode code)
 	const Uint8 *state = SDL_GetKeyboardState(&len);
 
 	return state[code];
+}
+
+inline static bool isPressedMouse(Uint32 mask)
+{
+	int x, y;
+	const Uint32 button = SDL_GetMouseState(&x, &y);
+
+	return button & mask;
 }
 
 class Window {

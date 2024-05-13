@@ -264,6 +264,55 @@ void Logic::step(float dt)
 	}
 }
 
+Brick Logic::brickLookup(float x, float y)
+{
+	for (auto &brick : bricks) {
+		if (x >= brick.x && x <= brick.x + brick.w && y >= brick.y && y <= brick.y + brick.h) {
+			return brick;
+		}
+	}
+	return { -1, 0, 0, 0, 0 };
+}
+
+Brick Logic::placeNewBrick(float x, float y, uint durability)
+{
+	for (auto &brick : bricks) {
+		if ((x - brick.x < Brick::w && x - brick.x > -Brick::w) &&
+		    (y - brick.y < Brick::h && y - brick.y > -Brick::h)) {
+			return { -1, 0, 0, 0, 0 };
+		}
+	}
+	return { addBrick(x, y, durability), x, y, 0, 0 };
+}
+
+void Logic::placeBrick(float x, float y, int target_id)
+{
+	size_t target;
+	for (size_t i = 0; i < bricks.size(); i++) {
+		Brick &brick = bricks[i];
+		if (target_id == brick.id) {
+			target = i;
+			continue;
+		}
+
+		if ((x - brick.x < Brick::w && x - brick.x > -Brick::w) &&
+		    (y - brick.y < Brick::h && y - brick.y > -Brick::h))
+			return;
+	}
+	bricks[target].x = x;
+	bricks[target].y = y;
+}
+
+void Logic::removeBrick(int target_id)
+{
+	for (auto it = bricks.begin(); it != bricks.end(); it++) {
+		if (target_id == it->id) {
+			bricks.erase(it);
+			break;
+		}
+	}
+}
+
 int Logic::addBall(float x, float y)
 {
 	int id = next_id++;
@@ -303,4 +352,13 @@ void Logic::init()
 	}
 
 	addBall(width / 2, height / 2);
+}
+
+void Logic::init_canva()
+{
+	state = RUNNING;
+	tick = 0;
+	score = 0;
+
+	speed = height / 2;
 }

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "collisiongrid.h"
 
 #include <vector>
@@ -53,12 +55,15 @@ class Logic {
 
 	Paddle_dir dir = NONE;
 
-	Logic(float width, float height)
+	Logic(float width, float height, bool canva = false)
 		: width(width)
 		, height(height)
 
 	{
-		init();
+		if (canva)
+			init_canva();
+		else
+			init();
 	}
 
 	void step(float dt);
@@ -104,6 +109,14 @@ class Logic {
 		visitor(paddle);
 	}
 
+	Brick brickLookup(float x, float y);
+
+	Brick placeNewBrick(float x, float y, uint durability);
+
+	void placeBrick(float x, float y, int target_id);
+
+	void removeBrick(int target_id);
+
 	GameState getState() const
 	{
 		return state;
@@ -140,4 +153,6 @@ class Logic {
 	template <Object T1, Object T2> bool collide(T1 &a, T2 &b);
 
 	void init();
+
+	void init_canva();
 };

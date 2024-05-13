@@ -1,5 +1,7 @@
 #include "mainscreen.h"
+#include "editor.h"
 #include "game.h"
+#include "sdl.h"
 
 inline bool is_in_rect(int x, int y, SDL::Rect rect)
 {
@@ -34,6 +36,7 @@ std::shared_ptr<State> MainScreen::operator()()
 				throw std::runtime_error("Quit");
 			}
 			if (is_in_rect(x, y, editor_.getRect())) {
+				return std::make_shared<Editor>(window_, renderer_);
 			}
 			break;
 		}

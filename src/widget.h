@@ -231,3 +231,63 @@ class UI_Factory {
 		return create_texture(renderer, 16, 16, 16, 64);
 	};
 };
+
+class Material {
+    private:
+	SDL::Texture sprites_;
+	SDL::Texture sprites_h_;
+
+	static constexpr float w = 48, h = 16;
+
+	uint durability_;
+	bool selected_;
+
+    public:
+	float x, y;
+	Material(SDL::Renderer renderer, uint durability, bool selected_, int x, int y)
+		: sprites_(renderer, "assets/asteroid.png")
+		, sprites_h_(renderer, "assets/asteroid.png")
+		, durability_(durability)
+		, selected_(selected_)
+		, x(x)
+		, y(y){};
+
+	inline uint getDurability() const
+	{
+		return durability_;
+	};
+
+	inline bool isSelected() const
+	{
+		return selected_;
+	};
+
+	inline void setSelected(bool s)
+	{
+		selected_ = s;
+	};
+
+	inline bool isOver(float a, float b)
+	{
+		return a >= x && a <= x + w && b >= y && b <= y + h;
+	};
+
+	void draw(SDL::Renderer renderer)
+	{
+		constexpr int max_durability = 5;
+		constexpr int dim = 96;
+
+		int off = max_durability - static_cast<int>(durability_);
+
+		SDL::Rect src = { off * dim, 0, dim, dim };
+
+		float a = x + w / 2 - dim * 0.5;
+		float b = y + h / 2 - dim * 0.5;
+
+		SDL::FRect dst = { a, b, dim, dim };
+		if (selected_)
+			renderer.copy(sprites_h_, src, dst);
+		else
+			renderer.copy(sprites_, src, dst);
+	}
+};
