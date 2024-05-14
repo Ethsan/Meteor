@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <vector>
 #include <fstream>
+#include <optional>
 
 class Paddle {
 	float x, y;
