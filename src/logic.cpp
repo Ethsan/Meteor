@@ -311,6 +311,7 @@ void Logic::removeBrick(int target_id)
 	for (auto it = bricks.begin(); it != bricks.end(); it++) {
 		if (target_id == it->id) {
 			bricks.erase(it);
+			brick_count--;
 			break;
 		}
 	}
@@ -364,6 +365,8 @@ void Logic::init_canva()
 	score = 0;
 
 	speed = height / 2;
+
+	addBall(width / 2, 6 * height / 7);
 }
 
 void Logic::save(std::ostream &output)

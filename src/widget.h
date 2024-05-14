@@ -246,7 +246,7 @@ class Material {
 	float x, y;
 	Material(SDL::Renderer renderer, uint durability, bool selected_, int x, int y)
 		: sprites_(renderer, "assets/asteroid.png")
-		, sprites_h_(renderer, "assets/asteroid.png")
+		, sprites_h_(renderer, "assets/asteroid_highlight.png")
 		, durability_(durability)
 		, selected_(selected_)
 		, x(x)

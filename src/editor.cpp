@@ -6,6 +6,10 @@
 #include "sdl.h"
 #include "widget.h"
 #include <SDL_events.h>
+#include <ctime>
+#include <iomanip>
+#include <iostream>
+#include <fstream>
 
 inline bool is_in_rect(int x, int y, SDL::Rect rect)
 {
@@ -111,6 +115,7 @@ void Editor::draw(float x, float y)
 	}
 
 	exit_.draw(renderer_, is_in_rect(x, y, exit_.getRect()));
+	save_.draw(renderer_, is_in_rect(x, y, save_.getRect()));
 
 	renderer_.present();
 }
@@ -136,6 +141,17 @@ void Editor::onLeftClic(float x, float y)
 			source_ = i;
 			break;
 		}
+	}
+
+	if (is_in_rect(x, y, save_.getRect())) {
+		const auto t = std::time(nullptr);
+		const auto tm = *std::localtime(&t);
+		std::ostringstream oss;
+		oss << std::put_time(&tm, "%d-%m-%Y-%H-%M-%S");
+		auto time = oss.str();
+
+		std::ofstream out("save/save_" + time + ".save", std::ios::out);
+		canva_.save(out);
 	}
 }
 

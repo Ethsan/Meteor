@@ -23,6 +23,7 @@ class Editor : public State {
 			   .ui = { renderer_, "assets/side.png" },
 			   .bg = { renderer_, "assets/bg.png" } }
 		, exit_("Exit", font, textColor, textHighlight, renderer_, 325, 15)
+		, save_("Save", font, textColor, textHighlight, renderer_, 325, 258)
 		, sources_({ Material{ renderer_, 5, true, 325, 90 }, Material{ renderer_, 4, false, 325, 120 },
 			     Material{ renderer_, 3, false, 325, 150 }, Material{ renderer_, 2, false, 325, 180 },
 			     Material{ renderer_, 1, false, 325, 210 } })
@@ -39,7 +40,7 @@ class Editor : public State {
 	static constexpr SDL::Color textColor = { 0xff, 0xff, 0xff, 0xff };
 	static constexpr SDL::Color textHighlight = { 0xff, 0xe0, 0x7e, 0xff };
 
-	Label exit_;
+	Label exit_, save_;
 
 	std::array<Material, 5> sources_;
 	unsigned int source_ = 0;
