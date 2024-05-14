@@ -11,10 +11,9 @@ int main(void)
 
 	FSM fsm(std::make_shared<MainScreen>(window, renderer));
 
-	try{
-	fsm.run();
-	}
-	catch(Close const&){
-		return  0;
+	try {
+		fsm.run();
+	} catch (Close const &) {
+		return 0;
 	}
 }

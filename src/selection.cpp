@@ -34,12 +34,11 @@ std::shared_ptr<State> Selection::operator()()
 				down();
 				needRedraw = true;
 			}
-			if (event.key.keysym.sym == SDLK_RETURN){
-				try{
+			if (event.key.keysym.sym == SDLK_RETURN) {
+				try {
 					return std::make_shared<Game>(window_, renderer_, save_files[target].getText());
-				}
-				catch(BadSaveFormat const&){
-					return std::make_shared<Game>(window_,renderer_);
+				} catch (BadSaveFormat const &) {
+					return std::make_shared<Game>(window_, renderer_);
 				}
 			}
 			break;

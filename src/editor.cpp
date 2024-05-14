@@ -51,32 +51,34 @@ std::shared_ptr<State> Editor::operator()()
 	bool is_mouseLeft_pressed = false;
 
 	for (;;) {
-		while (auto event = SDL::pollEvent()) {
-			is_mouseLeft_pressed = SDL::isPressedMouse(SDL_BUTTON_LMASK);
-			if (!is_mouseLeft_pressed)
-				clicked_brick = std::nullopt;
+		auto event = SDL::waitEvent();
 
-			if (event->type == SDL_QUIT)
-				throw Close();
-			if (event->type == SDL_MOUSEMOTION) {
-				x = event->motion.x;
-				y = event->motion.y;
-				if (is_mouseLeft_pressed) {
-					drag(x, y);
-				}
-				needRedraw = true;
+		is_mouseLeft_pressed = SDL::isPressedMouse(SDL_BUTTON_LMASK);
+		if (!is_mouseLeft_pressed)
+			clicked_brick = std::nullopt;
+
+		switch (event.type) {
+		case SDL_QUIT:
+			throw Close();
+		case SDL_MOUSEMOTION:
+			x = event.motion.x;
+			y = event.motion.y;
+			if (is_mouseLeft_pressed) {
+				drag(x, y);
 			}
-			if (event->type == SDL_MOUSEBUTTONDOWN) {
-				x = event->motion.x;
-				y = event->motion.y;
-				if (is_in_rect(x, y, exit_.getRect()))
-					return std::make_shared<MainScreen>(window_, renderer_);
-				if (event->button.button == SDL_BUTTON_LEFT)
-					onLeftClic(x, y);
-				if (event->button.button == SDL_BUTTON_RIGHT)
-					onRightClic(x, y);
-				needRedraw = true;
-			}
+			needRedraw = true;
+			break;
+		case SDL_MOUSEBUTTONDOWN:
+			x = event.motion.x;
+			y = event.motion.y;
+			if (is_in_rect(x, y, exit_.getRect()))
+				return std::make_shared<MainScreen>(window_, renderer_);
+			if (event.button.button == SDL_BUTTON_LEFT)
+				onLeftClic(x, y);
+			if (event.button.button == SDL_BUTTON_RIGHT)
+				onRightClic(x, y);
+			needRedraw = true;
+			break;
 		}
 
 		if (needRedraw) {
