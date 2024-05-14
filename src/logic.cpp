@@ -1,8 +1,11 @@
 #include "logic.h"
 #include "vec2.h"
 
+#include <cstddef>
+#include <istream>
 #include <limits>
 #include <cmath>
+#include <stdexcept>
 
 template <> void Logic::move(Ball &ball, float dt)
 {
@@ -361,4 +364,152 @@ void Logic::init_canva()
 	score = 0;
 
 	speed = height / 2;
+}
+
+void Logic::save(std::ostream &output)
+{
+	output << width << "," << height << std::endl;
+	output << next_id << std::endl;
+	output << brick_count << "," << ball_count << "," << tick << std::endl;
+	output << score << "," << combo << std::endl;
+	output << speed << "," << bounce_count << std::endl;
+	output << lives << std::endl;
+	output << paddle.id << "," << paddle.x << "," << paddle.y << std::endl;
+	output << balls.size() << std::endl;
+	output << bricks.size() << std::endl;
+	for (auto &ball : balls) {
+		output << ball.id << "," << ball.x << "," << ball.y << "," << ball.vx << "," << ball.vy << ","
+		       << ball.is_alive << std::endl;
+	}
+	for (auto &brick : bricks) {
+		output << brick.id << "," << brick.x << "," << brick.y << "," << brick.durability << ","
+		       << brick.last_hit << std::endl;
+	}
+}
+
+void istreamHealthCkeck(std::istream &cin)
+{
+	if (cin.eof() || cin.bad() || cin.fail())
+		throw std::runtime_error("Bad save format");
+}
+
+Logic::Logic(std::istream &save)
+	: width(0)
+	, height(0)
+{
+	constexpr auto max_size = std::numeric_limits<std::streamsize>::max();
+
+	size_t numberOfBalls = 0;
+	size_t numberOfBricks = 0;
+
+	save.clear();
+
+	istreamHealthCkeck(save);
+	save >> width;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, ',');
+	save >> height;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, '\n');
+	save >> next_id;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, '\n');
+	save >> brick_count;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, ',');
+	save >> ball_count;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, ',');
+	save >> tick;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, '\n');
+	save >> score;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, ',');
+	save >> combo;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, '\n');
+	save >> speed;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, ',');
+	save >> bounce_count;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, '\n');
+	save >> lives;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, '\n');
+	save >> paddle.id;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, ',');
+	save >> paddle.x;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, ',');
+	save >> paddle.y;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, '\n');
+	save >> numberOfBalls;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, '\n');
+	save >> numberOfBricks;
+	istreamHealthCkeck(save);
+	save.ignore(max_size, '\n');
+
+	balls.reserve(numberOfBalls);
+	bricks.reserve(numberOfBricks);
+
+	for (size_t i = 0; i < numberOfBalls; i++) {
+		int id;
+		float x, y, vx, vy;
+		bool is_alive;
+
+		istreamHealthCkeck(save);
+		save >> id;
+		istreamHealthCkeck(save);
+		save.ignore(max_size, ',');
+		save >> x;
+		istreamHealthCkeck(save);
+		save.ignore(max_size, ',');
+		save >> y;
+		istreamHealthCkeck(save);
+		save.ignore(max_size, ',');
+		save >> vx;
+		istreamHealthCkeck(save);
+		save.ignore(max_size, ',');
+		save >> vy;
+		istreamHealthCkeck(save);
+		save.ignore(max_size, ',');
+		save >> is_alive;
+		istreamHealthCkeck(save);
+		save.ignore(max_size, '\n');
+
+		Ball ball = { id, x, y, vx, vy, is_alive };
+		balls.emplace_back(ball);
+	}
+
+	for (size_t i = 0; i < numberOfBricks; i++) {
+		int id;
+		float x, y;
+		uint durability;
+		int last_hit;
+
+		istreamHealthCkeck(save);
+		save >> id;
+		istreamHealthCkeck(save);
+		save.ignore(max_size, ',');
+		save >> x;
+		istreamHealthCkeck(save);
+		save.ignore(max_size, ',');
+		save >> y;
+		istreamHealthCkeck(save);
+		save.ignore(max_size, ',');
+		save >> durability;
+		istreamHealthCkeck(save);
+		save.ignore(max_size, ',');
+		save >> last_hit;
+		istreamHealthCkeck(save);
+		save.ignore(max_size, '\n');
+
+		Brick brick = { id, x, y, durability, last_hit };
+		bricks.emplace_back(brick);
+	}
 }

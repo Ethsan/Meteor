@@ -9,3 +9,5 @@ compile_commands.json
 
 bricked
 test_runner
+
+test/testResult.save

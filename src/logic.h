@@ -2,8 +2,13 @@
 
 #include "collisiongrid.h"
 
+#include <istream>
+#include <ostream>
+#include <string>
 #include <vector>
 #include <variant>
+#include <iostream>
+#include <fstream>
 
 struct Paddle {
 	int id;
@@ -58,12 +63,19 @@ class Logic {
 	Logic(float width, float height, bool canva = false)
 		: width(width)
 		, height(height)
-
 	{
 		if (canva)
 			init_canva();
 		else
 			init();
+	}
+
+	Logic(std::istream &save);
+
+	static Logic loadFromFile(const std::string &save_file)
+	{
+		std::ifstream save_import(save_file, std::ios::in);
+		return Logic(save_import);
 	}
 
 	void step(float dt);
@@ -121,6 +133,25 @@ class Logic {
 	{
 		return state;
 	}
+
+	/*	
+	************* SAVE FORMAT **************
+	----------------------------------------
+	| width,height                         |
+	| next_id                              |
+	| brick_count,ball_count,tick          |
+	| score,combo                          |
+	| speed,bounce_count                   |
+	| lives                                |
+	| paddle.id,paddle.x,paddle.y          |
+	| numberOfBalls                        |
+	| numberOfBricks                       |
+	| #balls(id,x,y,vx,vy,isalive)         |
+	| #bricks(id,x,y,durability,last_hit)  |
+	----------------------------------------
+	*/
+
+	void save(std::ostream &output);
 
     private:
 	float width, height;
