@@ -1,6 +1,11 @@
 #pragma once
 
-#include <cstddef>
+#include "collisiongrid.h"
+
+#include "exception.h"
+#include <istream>
+#include <ostream>
+#include <string>
 #include <vector>
 #include <fstream>
 #include <optional>
@@ -236,7 +241,11 @@ class Logic {
 	static Logic load(const std::string &save_file)
 	{
 		std::ifstream save_import(save_file, std::ios::in);
-		return load(save_import);
+		if (!save_import.is_open())
+			throw BadSaveFormat();
+		Logic l(load(save_import));
+		save_import.close();
+		return l;
 	}
 
 	static Logic load(std::istream &save);

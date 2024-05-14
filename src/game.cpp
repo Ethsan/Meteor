@@ -291,6 +291,13 @@ std::optional<std::shared_ptr<State> > Game::pause()
 				if (buttons[0].contains(x, y)) {
 					return resume();
 				} else if (buttons[1].contains(x, y)) {
+					if (!save_file_.empty()) {
+						try {
+							return std::make_shared<Game>(window_, renderer_, save_file_);
+						} catch (BadSaveFormat const &) {
+							return std::make_shared<Game>(window_, renderer_);
+						}
+					}
 					return std::make_shared<Game>(window_, renderer_);
 				} else if (buttons[2].contains(x, y)) {
 					return std::make_shared<MainScreen>(window_, renderer_);
@@ -413,6 +420,13 @@ std::shared_ptr<State> Game::end()
 				if (home.contains(x, y)) {
 					return std::make_shared<MainScreen>(window_, renderer_);
 				} else if (restart.contains(x, y)) {
+					if (!save_file_.empty()) {
+						try {
+							return std::make_shared<Game>(window_, renderer_, save_file_);
+						} catch (BadSaveFormat const &) {
+							return std::make_shared<Game>(window_, renderer_);
+						}
+					}
 					return std::make_shared<Game>(window_, renderer_);
 				}
 				break;

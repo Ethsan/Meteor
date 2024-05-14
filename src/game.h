@@ -4,6 +4,7 @@
 #include "sdl.h"
 #include "logic.h"
 #include "widget.h"
+#include <string>
 
 struct Assets {
 	SDL::Texture brick_rect;
@@ -23,6 +24,7 @@ class Game : public State {
 	Game(const SDL::Window &window, const SDL::Renderer &renderer)
 		: window_(window)
 		, renderer_(renderer)
+		, save_file_()
 		, logic_(300, 300)
 		, assets_{ .brick_rect = { renderer_, "assets/asteroid.png" },
 			   .brick_hex = { renderer_, "assets/hex.png" },
@@ -39,6 +41,7 @@ class Game : public State {
 	Game(const SDL::Window &window, const SDL::Renderer &renderer, const std::string save_file)
 		: window_(window)
 		, renderer_(renderer)
+		, save_file_(save_file)
 		, logic_(Logic::loadFromFile(save_file))
 		, assets_{ .brick = { renderer_, "assets/asteroid.png" },
 			   .ball = { renderer_, "assets/ball.png" },
@@ -56,6 +59,8 @@ class Game : public State {
     private:
 	SDL::Window window_;
 	SDL::Renderer renderer_;
+
+	const std::string save_file_;
 
 	Logic logic_;
 	Assets assets_;
