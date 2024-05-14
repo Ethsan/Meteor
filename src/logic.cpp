@@ -458,12 +458,14 @@ void Logic::save(std::ostream &output)
 	for (auto &brick : bricks) {
 		if (brick.dura == 0)
 			continue;
+		auto powerup = brick.powerup ? brick.powerup.value() : -1;
+
 		output << brick.x << "," << brick.y << "," << brick.dura << "," << brick.last_hit << "," << brick.shape
-		       << std::endl;
+		       << "," << powerup << std::endl;
 	}
 }
 
-void healt_check(std::istream &cin)
+void health_check(std::istream &cin)
 {
 	if (cin.eof() || cin.bad() || cin.fail())
 		throw std::runtime_error("Bad save format");
@@ -480,56 +482,56 @@ Logic Logic::load(std::istream &save)
 	save.ignore(max_size, ',');
 	save >> h;
 	save.ignore(max_size, '\n');
-	healt_check(save);
+	health_check(save);
 
 	Logic logic{ w, h, true };
 
-	healt_check(save);
+	health_check(save);
 	save >> logic.tick;
-	healt_check(save);
+	health_check(save);
 	save.ignore(max_size, '\n');
 	save >> logic.score;
-	healt_check(save);
+	health_check(save);
 	save.ignore(max_size, ',');
 	save >> logic.combo;
-	healt_check(save);
+	health_check(save);
 	save.ignore(max_size, '\n');
 	save >> logic.bonus_speed;
-	healt_check(save);
+	health_check(save);
 	save.ignore(max_size, ',');
 	save >> logic.bounce_count;
-	healt_check(save);
+	health_check(save);
 	save.ignore(max_size, '\n');
 	save >> logic.lives;
-	healt_check(save);
+	health_check(save);
 	save.ignore(max_size, ',');
 	save >> logic.paddle.x;
-	healt_check(save);
+	health_check(save);
 	save.ignore(max_size, ',');
 	save >> logic.paddle.y;
-	healt_check(save);
+	health_check(save);
 	save.ignore(max_size, '\n');
 
 	size_t ball_count = 0;
 	save >> ball_count;
-	healt_check(save);
+	health_check(save);
 	save.ignore(max_size, '\n');
 
 	for (size_t i = 0; i < ball_count; i++) {
 		float x, y, vx, vy;
 
-		healt_check(save);
+		health_check(save);
 		save >> x;
-		healt_check(save);
+		health_check(save);
 		save.ignore(max_size, ',');
 		save >> y;
-		healt_check(save);
+		health_check(save);
 		save.ignore(max_size, ',');
 		save >> vx;
-		healt_check(save);
+		health_check(save);
 		save.ignore(max_size, ',');
 		save >> vy;
-		healt_check(save);
+		health_check(save);
 		save.ignore(max_size, '\n');
 
 		logic.add_ball(x, y, vx, vy);
@@ -537,28 +539,36 @@ Logic Logic::load(std::istream &save)
 
 	size_t brick_count = 0;
 	save >> brick_count;
-	healt_check(save);
+	health_check(save);
 	save.ignore(max_size, '\n');
 
 	for (size_t i = 0; i < brick_count; i++) {
 		float x, y;
 		uint durability;
 		int shape;
+		int powerup;
 
-		healt_check(save);
+		health_check(save);
 		save >> x;
-		healt_check(save);
+		health_check(save);
 		save.ignore(max_size, ',');
 		save >> y;
-		healt_check(save);
+		health_check(save);
 		save.ignore(max_size, ',');
 		save >> durability;
-		healt_check(save);
-		save.ignore(max_size, '\n');
+		health_check(save);
+		save.ignore(max_size, ',');
 		save >> shape;
-		healt_check(save);
+		health_check(save);
+		save.ignore(max_size, ',');
+		save >> powerup;
+		save.ignore(max_size, '\n');
+		health_check(save);
 
-		logic.add_brick(x, y, Brick::Shape(shape), durability);
+		std::optional<Powerup::type> p = powerup == -1 ? std::nullopt :
+								 std::optional<Powerup::type>(Powerup::type(powerup));
+
+		logic.add_brick(x, y, Brick::Shape(shape), durability, p);
 	}
 
 	return logic;
