@@ -13,11 +13,6 @@
 #include <optional>
 #include "exception.h"
 
-inline bool is_in_rect(int x, int y, SDL::Rect rect)
-{
-	return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
-}
-
 struct RenderVisitor {
 	SDL::Renderer &renderer;
 	const EditorAssets &assets;
@@ -71,7 +66,7 @@ std::shared_ptr<State> Editor::operator()()
 		case SDL_MOUSEBUTTONDOWN:
 			x = event.motion.x;
 			y = event.motion.y;
-			if (is_in_rect(x, y, exit_.getRect()))
+			if (exit_.isOver(x, y))
 				return std::make_shared<MainScreen>(window_, renderer_);
 			if (event.button.button == SDL_BUTTON_LEFT)
 				onLeftClic(x, y);
@@ -118,8 +113,8 @@ void Editor::draw(float x, float y)
 		a.draw(renderer_);
 	}
 
-	exit_.draw(renderer_, is_in_rect(x, y, exit_.getRect()));
-	save_.draw(renderer_, is_in_rect(x, y, save_.getRect()));
+	exit_.draw(renderer_, exit_.isOver(x, y));
+	save_.draw(renderer_, save_.isOver(x, y));
 
 	renderer_.present();
 }
@@ -148,7 +143,7 @@ void Editor::onLeftClic(float x, float y)
 		}
 	}
 
-	if (is_in_rect(x, y, save_.getRect())) {
+	if (save_.isOver(x, y)) {
 		const auto t = std::time(nullptr);
 		const auto tm = *std::localtime(&t);
 		std::ostringstream oss;

@@ -38,6 +38,11 @@ class Label {
 			draw(renderer);
 	}
 
+	inline bool isOver(int a, int b)
+	{
+		return a >= x && a <= x + texture_.getWidth() && b >= y && b <= y + texture_.getHeight();
+	};
+
 	void setText(const std::string &text, const SDL::Font &font, const SDL::Color &color, const SDL::Color &color_h,
 		     SDL::Renderer &renderer)
 	{
@@ -46,12 +51,12 @@ class Label {
 		text_ = text;
 	}
 
-	std::string getText()
+	inline std::string getText()
 	{
 		return text_;
 	}
 
-	SDL::Rect getRect()
+	inline SDL::Rect getRect()
 	{
 		return { x, y, texture_.getRect().w, texture_.getRect().h };
 	}

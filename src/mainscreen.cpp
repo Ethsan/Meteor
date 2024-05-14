@@ -5,11 +5,6 @@
 #include "sdl.h"
 #include "exception.h"
 
-inline bool is_in_rect(int x, int y, SDL::Rect rect)
-{
-	return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
-}
-
 std::shared_ptr<State> MainScreen::operator()()
 {
 	int x = 0, y = 0;
@@ -32,13 +27,13 @@ std::shared_ptr<State> MainScreen::operator()()
 			needRedraw = true;
 			break;
 		case SDL_MOUSEBUTTONDOWN:
-			if (is_in_rect(x, y, play_.getRect())) {
+			if (play_.isOver(x, y)) {
 				return std::make_shared<Selection>(window_, renderer_);
 			}
-			if (is_in_rect(x, y, exit_.getRect())) {
+			if (exit_.isOver(x, y)) {
 				throw Close();
 			}
-			if (is_in_rect(x, y, editor_.getRect())) {
+			if (editor_.isOver(x, y)) {
 				return std::make_shared<Editor>(window_, renderer_);
 			}
 			break;
@@ -76,12 +71,9 @@ std::shared_ptr<State> MainScreen::operator()()
 			planets_.draw(renderer_, alpha, beta);
 			// Draw the title
 			title_.draw(renderer_);
-			play_.draw(renderer_,
-				   (keyTarget_ == 5 && is_in_rect(x, y, play_.getRect())) || keyTarget_ == 0);
-			exit_.draw(renderer_,
-				   (keyTarget_ == 5 && is_in_rect(x, y, exit_.getRect())) || keyTarget_ == 1);
-			editor_.draw(renderer_,
-				     (keyTarget_ == 5 && is_in_rect(x, y, editor_.getRect())) || keyTarget_ == 2);
+			play_.draw(renderer_, (keyTarget_ == 5 && play_.isOver(x, y)) || keyTarget_ == 0);
+			exit_.draw(renderer_, (keyTarget_ == 5 && exit_.isOver(x, y)) || keyTarget_ == 1);
+			editor_.draw(renderer_, (keyTarget_ == 5 && editor_.isOver(x, y)) || keyTarget_ == 2);
 			// Present the screen
 			renderer_.present();
 		}
