@@ -1,8 +1,7 @@
 #include "game.h"
-#include "SDL_events.h"
-#include "mainscreen.h"
+#include "logic.h"
 #include "sdl.h"
-#include "widget.h"
+#include "mainscreen.h"
 
 struct RenderVisitor {
 	SDL::Renderer &renderer;
@@ -11,6 +10,20 @@ struct RenderVisitor {
 
 	void operator()(const auto &)
 	{
+	}
+
+	void operator()(const Powerup &powerup)
+	{
+		constexpr int dim = 16;
+
+		if (!powerup.is_alive())
+			return;
+
+		int off = powerup.get_power();
+
+		SDL::Rect src = { off * dim, 0, dim, dim };
+		SDL::FRect dst = { powerup.get_x() - dim / 2.f, powerup.get_y() - dim / 2.f, dim, dim };
+		renderer.copy(assets.powerups, src, dst);
 	}
 
 	void operator()(const Brick &brick)
@@ -36,9 +49,9 @@ struct RenderVisitor {
 		SDL::FRect dst = { x, y, dim, dim };
 		switch (brick.get_form()) {
 		case Brick::RECT:
-			return renderer.copy(assets.brick, src, dst);
+			return renderer.copy(assets.brick_rect, src, dst);
 		case Brick::HEX:
-			return renderer.copy(assets.brick, src, dst);
+			return renderer.copy(assets.brick_hex, src, dst);
 		}
 	}
 

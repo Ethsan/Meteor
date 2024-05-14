@@ -6,7 +6,7 @@ constexpr float inf = std::numeric_limits<float>::infinity();
 
 template <> void Logic::move(Powerup &p, float dt)
 {
-	p.y += get_speed() * dt * 0.5;
+	p.y += get_speed() * dt * 0.1;
 }
 
 template <> void Logic::move(Ball &ball, float dt)
@@ -18,12 +18,14 @@ template <> void Logic::move(Ball &ball, float dt)
 	const float height = get_height();
 
 	vec2f v = { ball.vx, ball.vy };
-	v = v.normalized() * get_speed();
-	ball.vx = v.x;
-	ball.vy = v.y;
+	if (v.norm() != 0) {
+		v = v.normalized() * get_speed();
+		ball.vx = v.x;
+		ball.vy = v.y;
 
-	ball.x += ball.vx * dt;
-	ball.y += ball.vy * dt;
+		ball.x += ball.vx * dt;
+		ball.y += ball.vy * dt;
+	}
 
 	if (ball.x - ball.r < 0) {
 		ball.x = ball.r;
@@ -162,7 +164,7 @@ template <> void Logic::collide(Ball &ball, Brick &brick)
 		brick_count--;
 		score += brick_points;
 		if (brick.powerup) {
-			add_powerup(brick.x, brick.y, *brick.powerup);
+			add_powerup(brick.x, brick.y, brick.powerup.value());
 		}
 	}
 }
@@ -253,7 +255,7 @@ template <> void Logic::collide(Ball &ball, Powerup &powerup)
 		bonus_speed += 0.1 * h;
 		break;
 	case Powerup::EXTRA_BALL:
-		add_ball(powerup.x, powerup.y);
+		add_ball(powerup.x, powerup.y, -ball.vx * .9, -ball.vy * .9);
 		break;
 	case Powerup::EXTRA_LIFE:
 		if (lives < 3)
@@ -418,11 +420,11 @@ void Logic::init()
 	tick = 0;
 	score = 0;
 
-	for (float x = 0; x < w; x += 50)
-		for (float y = 0; y < h / 3; y += 20)
-			add_brick(x, y, Brick::RECT, 1);
-
-	add_brick(w / 2, h / 3, Brick::HEX, 2, Powerup::type::EXTRA_BALL);
+	for (float x = Brick::hex_r; x < w - Brick::hex_r; x += 50)
+		for (float y = Brick::hex_r; y < h / 3; y += 50)
+			add_brick(x, y, Brick::HEX, 5, std::nullopt);
+	//test powerups
+	add_brick(w / 3, h / 2, Brick::RECT, 1, Powerup::EXTRA_BALL);
 
 	add_ball(w / 2, h / 2);
 }

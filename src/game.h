@@ -6,8 +6,10 @@
 #include "widget.h"
 
 struct Assets {
-	SDL::Texture brick;
+	SDL::Texture brick_rect;
+	SDL::Texture brick_hex;
 	SDL::Texture ball;
+	SDL::Texture powerups;
 	SDL::Texture paddle;
 	SDL::Texture ship;
 	SDL::Texture ship_right;
@@ -22,8 +24,10 @@ class Game : public State {
 		: window_(window)
 		, renderer_(renderer)
 		, logic_(300, 300)
-		, assets_{ .brick = { renderer_, "assets/asteroid.png" },
+		, assets_{ .brick_rect = { renderer_, "assets/asteroid.png" },
+			   .brick_hex = { renderer_, "assets/hex.png" },
 			   .ball = { renderer_, "assets/ball.png" },
+			   .powerups = { renderer_, "assets/powerups.png" },
 			   .paddle = { renderer_, "assets/shield.png" },
 			   .ship = { renderer_, "assets/ship_forward.png" },
 			   .ship_right = { renderer_, "assets/ship_right.png" },

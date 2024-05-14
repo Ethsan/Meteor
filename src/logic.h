@@ -280,6 +280,10 @@ class Logic {
 		for (auto &brick : bricks) {
 			visitor(brick);
 		}
+
+		for (auto &powerup : powerups) {
+			visitor(powerup);
+		}
 		visitor(paddle);
 	}
 
