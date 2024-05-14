@@ -1,6 +1,6 @@
 #include "mainscreen.h"
 #include "editor.h"
-#include "game.h"
+#include "selection.h"
 #include "sdl.h"
 
 inline bool is_in_rect(int x, int y, SDL::Rect rect)
@@ -30,7 +30,7 @@ std::shared_ptr<State> MainScreen::operator()()
 			break;
 		case SDL_MOUSEBUTTONDOWN:
 			if (is_in_rect(x, y, play_.getRect())) {
-				return std::make_shared<Game>(window_, renderer_);
+				return std::make_shared<Selection>(window_, renderer_);
 			}
 			if (is_in_rect(x, y, exit_.getRect())) {
 				throw std::runtime_error("Quit");

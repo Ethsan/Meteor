@@ -36,6 +36,20 @@ class Game : public State {
 			   .bg = { renderer_, "assets/bg.png" } }
 		, ui_factory_(renderer_){};
 
+	Game(const SDL::Window &window, const SDL::Renderer &renderer, const std::string save_file)
+		: window_(window)
+		, renderer_(renderer)
+		, logic_(Logic::loadFromFile(save_file))
+		, assets_{ .brick = { renderer_, "assets/asteroid.png" },
+			   .ball = { renderer_, "assets/ball.png" },
+			   .paddle = { renderer_, "assets/shield.png" },
+			   .ship = { renderer_, "assets/ship_forward.png" },
+			   .ship_right = { renderer_, "assets/ship_right.png" },
+			   .ship_left = { renderer_, "assets/ship_left.png" },
+			   .ui = { renderer_, "assets/side.png" },
+			   .bg = { renderer_, "assets/bg.png" } }
+		, ui_factory_(renderer_){};
+
 	std::shared_ptr<State> operator()() override;
 	void draw();
 

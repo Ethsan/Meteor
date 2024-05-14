@@ -6,6 +6,7 @@ class Label {
     private:
 	SDL::Texture texture_;
 	SDL::Texture texture_h_;
+	std::string text_;
 
     public:
 	int x, y;
@@ -14,6 +15,7 @@ class Label {
 	      SDL::Renderer &renderer, int x, int y)
 		: texture_(renderer, font.renderText(text, color))
 		, texture_h_(renderer, font.renderText(text, color_h))
+		, text_(text)
 		, x(x)
 		, y(y)
 	{
@@ -36,9 +38,17 @@ class Label {
 			draw(renderer);
 	}
 
-	void setText(const std::string &text, const SDL::Font &font, const SDL::Color &color, SDL::Renderer &renderer)
+	void setText(const std::string &text, const SDL::Font &font, const SDL::Color &color, const SDL::Color &color_h,
+		     SDL::Renderer &renderer)
 	{
 		texture_ = SDL::Texture(renderer, font.renderText(text, color));
+		texture_h_ = SDL::Texture(renderer, font.renderText(text, color_h));
+		text_ = text;
+	}
+
+	std::string getText()
+	{
+		return text_;
 	}
 
 	SDL::Rect getRect()
