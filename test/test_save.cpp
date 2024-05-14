@@ -1,5 +1,6 @@
 #include "test_save.h"
 #include "logic.h"
+#include <cmath>
 #include <iostream>
 #include <fstream>
 
@@ -12,16 +13,16 @@ bool test_save()
 
 	logic.save(save_export);
 
-	Logic logic2(save_import);
-	if (logic2.getHeight() != 310) {
+	Logic logic2 = Logic::load(save_import);
+	if (logic2.get_height() != 310) {
 		std::cerr << "Error: height is not 310" << std::endl;
 		return false;
 	}
-	if (logic2.getLives() != 3) {
+	if (logic2.get_lives() != 3) {
 		std::cerr << "Error: lives is not 3" << std::endl;
 		return false;
 	}
-	if (std::fabs(logic2.getSpeed() - -2.4f) > 0.001f) {
+	if (std::fabs(logic2.get_speed() - -2.4f) > 0.001f) {
 		std::cerr << "Error: speed is not -2.4 " << std::endl;
 		return false;
 	}

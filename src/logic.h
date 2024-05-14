@@ -4,6 +4,7 @@
 #include <vector>
 #include <fstream>
 #include <optional>
+#include <array>
 
 class Paddle {
 	float x, y;

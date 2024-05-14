@@ -1,6 +1,8 @@
 #include "logic.h"
 #include "vec2.h"
-#include <cstddef>
+
+#include <optional>
+#include <span>
 
 constexpr float inf = std::numeric_limits<float>::infinity();
 
@@ -111,11 +113,11 @@ template <> void Logic::collide(Ball &ball, Brick &brick)
 	normals.emplace_back(vec_ball.normalized());
 
 	vec2f min_translation = { 0, 0 };
-	float min_overlap = std::numeric_limits<float>::infinity();
+	float min_overlap = inf;
 
 	for (const auto &normal : normals) {
-		float rect_max = -std::numeric_limits<float>::infinity();
-		float rect_min = std::numeric_limits<float>::infinity();
+		float rect_max = -inf;
+		float rect_min = inf;
 
 		for (const auto &vert : vertices) {
 			float proj = normal.dot(vert);
@@ -322,12 +324,12 @@ std::optional<std::pair<std::size_t, Brick &> > Logic::get_brick(float x, float 
 	for (std::size_t i = 0; i < bricks.size(); i++) {
 		auto &brick = bricks[i];
 
-		vec2f point = { x, y };
 		auto vertices = brick.get_points();
-		if (point_in_polygon(point, vertices)) {
+		if (point_in_polygon({ x, y }, vertices)) {
 			return { { i, brick } };
 		}
 	}
+
 	return std::nullopt;
 }
 
