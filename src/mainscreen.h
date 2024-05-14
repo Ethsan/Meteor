@@ -38,6 +38,8 @@ class MainScreen : public State {
 	static constexpr SDL::Color fg = { 0x34, 0xac, 0xba, 0xff };
 	static constexpr SDL::Color hl = { 0xff, 0xe0, 0x7e, 0xff };
 
+	unsigned int keyTarget_ = 5; //mod 3
+
     public:
 	MainScreen(const SDL::Window &window, const SDL::Renderer &renderer)
 		: window_(window)

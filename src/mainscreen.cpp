@@ -1,4 +1,5 @@
 #include "mainscreen.h"
+#include "SDL_events.h"
 #include "editor.h"
 #include "selection.h"
 #include "sdl.h"
@@ -22,6 +23,7 @@ std::shared_ptr<State> MainScreen::operator()()
 		case SDL_QUIT:
 			throw std::runtime_error("Quit");
 		case SDL_MOUSEMOTION:
+			keyTarget_ = 5;
 			x = event.motion.x;
 			y = event.motion.y;
 			alpha = -(static_cast<double>(x) - (windowWidth / 2)) / (30 * windowWidth);
@@ -39,6 +41,27 @@ std::shared_ptr<State> MainScreen::operator()()
 				return std::make_shared<Editor>(window_, renderer_);
 			}
 			break;
+		case SDL_KEYDOWN:
+			if (event.key.keysym.sym == SDLK_UP) {
+				keyTarget_ = (keyTarget_ + 2) % 3;
+				needRedraw = true;
+			}
+			if (event.key.keysym.sym == SDLK_DOWN) {
+				keyTarget_ = (keyTarget_ + 1) % 3;
+				needRedraw = true;
+			}
+			if (event.key.keysym.sym == SDLK_RETURN) {
+				switch (keyTarget_) {
+				case 5:
+				case 0:
+					return std::make_shared<Selection>(window_, renderer_);
+				case 1:
+					throw std::runtime_error("Quit");
+				case 2:
+					return std::make_shared<Editor>(window_, renderer_);
+				}
+			}
+			break;
 		}
 
 		if (needRedraw) {
@@ -52,9 +75,12 @@ std::shared_ptr<State> MainScreen::operator()()
 			planets_.draw(renderer_, alpha, beta);
 			// Draw the title
 			title_.draw(renderer_);
-			play_.draw(renderer_, is_in_rect(x, y, play_.getRect()));
-			exit_.draw(renderer_, is_in_rect(x, y, exit_.getRect()));
-			editor_.draw(renderer_, is_in_rect(x, y, editor_.getRect()));
+			play_.draw(renderer_,
+				   (keyTarget_ == 5 && is_in_rect(x, y, play_.getRect())) || keyTarget_ == 0);
+			exit_.draw(renderer_,
+				   (keyTarget_ == 5 && is_in_rect(x, y, exit_.getRect())) || keyTarget_ == 1);
+			editor_.draw(renderer_,
+				     (keyTarget_ == 5 && is_in_rect(x, y, editor_.getRect())) || keyTarget_ == 2);
 			// Present the screen
 			renderer_.present();
 		}
