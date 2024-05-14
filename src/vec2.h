@@ -1,9 +1,22 @@
 #include <cmath>
 #include <ostream>
 
-template <typename T = float> class vec2 {
-    public:
+template <typename T = float> struct vec2 {
 	T x, y;
+
+	vec2() = default;
+
+	vec2(T x, T y)
+		: x(x)
+		, y(y)
+	{
+	}
+
+	vec2(std::pair<T, T> p)
+		: x(p.first)
+		, y(p.second)
+	{
+	}
 
 	vec2 operator+(const vec2 &v) const
 	{
@@ -94,7 +107,7 @@ template <typename T = float> class vec2 {
 
 	vec2 rotate90CW() const
 	{
-		return { y, x };
+		return { y, -x };
 	}
 
 	bool isnan() const

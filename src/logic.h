@@ -1,47 +1,208 @@
 #pragma once
 
-#include "collisiongrid.h"
-
-#include <istream>
-#include <ostream>
-#include <string>
+#include <cstddef>
 #include <vector>
-#include <variant>
-#include <iostream>
 #include <fstream>
 
-struct Paddle {
-	int id;
+class Paddle {
 	float x, y;
 
+    public:
+	Paddle(float x, float y)
+		: x(x)
+		, y(y)
+	{
+	}
+	float get_x() const
+	{
+		return x;
+	}
+	float get_y() const
+	{
+		return y;
+	}
+
+	friend class Logic;
 	static constexpr float w = 56, h = 30;
 };
 
-struct Ball {
-	int id;
+class Ball {
 	float x, y;
 	float vx, vy;
+	bool alive;
 
-	bool is_alive;
+    public:
+	Ball(float x, float y, float vx, float vy)
+		: x(x)
+		, y(y)
+		, vx(vx)
+		, vy(vy)
+		, alive(true)
 
+	{
+	}
+	float get_x() const
+	{
+		return x;
+	}
+	float get_y() const
+	{
+		return y;
+	}
+	float get_vx() const
+	{
+		return vx;
+	}
+	float get_vy() const
+	{
+		return vy;
+	}
+	bool is_alive() const
+	{
+		return alive;
+	}
+
+	friend class Logic;
 	static constexpr float r = 8;
 };
 
-struct Brick {
-	int id;
+class Powerup {
+    public:
+	enum type {
+		SLOW_BALL,
+		FAST_BALL,
+		EXTRA_BALL,
+		EXTRA_LIFE,
+		SMALL_BALL,
+		BIG_BALL,
+		STRONG_BALL,
+	};
+
+	Powerup(float x, float y, type t)
+		: x(x)
+		, y(y)
+		, power(t)
+		, alive(true)
+
+	{
+	}
+	float get_x() const
+	{
+		return x;
+	}
+	float get_y() const
+	{
+		return y;
+	}
+
+	bool is_alive() const
+	{
+		return alive;
+	}
+
+	enum type get_power() const
+	{
+		return power;
+	}
+
+	static constexpr float r = 8;
+	friend class Logic;
+
+    private:
 	float x, y;
+	type power;
+	bool alive;
+};
 
-	uint durability;
+class Brick {
+    public:
+	enum Shape { RECT, HEX };
+
+	Brick(float x, float y, Shape shape, uint dura = 1, std::optional<Powerup::type> powerup = std::nullopt)
+		: x(x)
+		, y(y)
+		, dura(dura)
+		, last_hit(-1)
+		, powerup(powerup)
+		, shape(shape)
+	{
+	}
+
+	float get_x() const
+	{
+		return x;
+	}
+	float get_y() const
+	{
+		return y;
+	}
+	uint get_durability() const
+	{
+		return dura;
+	}
+	int get_last_hit() const
+	{
+		return last_hit;
+	}
+	std::optional<Powerup::type> get_powerup() const
+	{
+		return powerup;
+	}
+
+	Shape get_form() const
+	{
+		return shape;
+	}
+
+	static constexpr float rect_w = 48, rect_h = 16;
+	static constexpr std::array<std::pair<float, float>, 4> rect_points = {
+		std::make_pair(-rect_w / 2, -rect_h / 2),
+		std::make_pair(rect_w / 2, -rect_h / 2),
+		std::make_pair(rect_w / 2, rect_h / 2),
+		std::make_pair(-rect_w / 2, rect_h / 2),
+	};
+
+	static constexpr float hex_r = 16;
+	static constexpr std::array<std::pair<float, float>, 6> hex_points = {
+		std::make_pair(0, -hex_r),
+		std::make_pair(hex_r * 0.866, -hex_r / 2),
+		std::make_pair(hex_r * 0.866, hex_r / 2),
+		std::make_pair(0, hex_r),
+		std::make_pair(-hex_r * 0.866, hex_r / 2),
+		std::make_pair(-hex_r * 0.866, -hex_r / 2),
+	};
+
+	std::vector<std::pair<float, float> > get_points() const
+	{
+		switch (shape) {
+		case RECT: {
+			std::vector<std::pair<float, float> > res;
+			res.reserve(rect_points.size());
+			for (auto &p : rect_points) {
+				res.push_back(std::make_pair(x + p.first, y + p.second));
+			}
+			return res;
+		}
+		case HEX: {
+			std::vector<std::pair<float, float> > res;
+			res.reserve(hex_points.size());
+			for (auto &p : hex_points) {
+				res.push_back(std::make_pair(x + p.first, y + p.second));
+			}
+			return res;
+		}
+		}
+		return {};
+	}
+	friend class Logic;
+
+    private:
+	float x, y;
+	uint dura;
 	int last_hit;
-
-	static constexpr float w = 48, h = 16;
+	std::optional<Powerup::type> powerup;
+	Shape shape;
 };
-
-struct Empty {
-	uint id;
-};
-
-template <typename T> concept Object = std::is_same_v<T, Ball> || std::is_same_v<T, Brick> || std::is_same_v<T, Paddle>;
 
 enum Paddle_dir {
 	NONE,
@@ -56,13 +217,12 @@ class Logic {
 		WIN,
 		LOST,
 	};
-	using ObjectVariant = std::variant<Empty, Ball, Brick, Paddle>;
 
 	Paddle_dir dir = NONE;
 
 	Logic(float width, float height, bool canva = false)
-		: width(width)
-		, height(height)
+		: w(width)
+		, h(height)
 	{
 		if (canva)
 			init_canva();
@@ -72,40 +232,42 @@ class Logic {
 
 	Logic(std::istream &save);
 
-	static Logic loadFromFile(const std::string &save_file)
+	static Logic load(const std::string &save_file)
 	{
 		std::ifstream save_import(save_file, std::ios::in);
-		return Logic(save_import);
+		return load(save_import);
 	}
+
+	static Logic load(std::istream &save);
 
 	void step(float dt);
 
-	float getWidth() const
+	float get_width() const
 	{
-		return width;
+		return w;
 	}
 
-	float getHeight() const
+	float get_height() const
 	{
-		return height;
+		return h;
 	}
 
-	int getTick() const
+	int get_tick() const
 	{
 		return tick;
 	}
 
-	int getScore() const
+	int get_score() const
 	{
 		return score;
 	}
 
-	float getSpeed() const
+	float get_speed() const
 	{
-		return speed;
+		return base_speed + bonus_speed + bounce_count * 1;
 	}
 
-	int getLives() const
+	int get_lives() const
 	{
 		return lives;
 	}
@@ -121,15 +283,20 @@ class Logic {
 		visitor(paddle);
 	}
 
-	Brick brickLookup(float x, float y);
+	Brick &get_brick(std::size_t index)
+	{
+		return bricks.at(index);
+	}
 
-	Brick placeNewBrick(float x, float y, uint durability);
+	std::optional<std::pair<std::size_t, Brick &> > get_brick(float x, float y);
 
-	void placeBrick(float x, float y, int target_id);
+	std::optional<std::size_t> add_brick_safe(float x, float y, uint durability);
 
-	void removeBrick(int target_id);
+	void replace_brick_safe(std::size_t index, float x, float y);
 
-	GameState getState() const
+	void remove_brick(std::size_t index);
+
+	GameState get_state() const
 	{
 		return state;
 	}
@@ -145,8 +312,8 @@ class Logic {
 	| lives                                |
 	| paddle.id,paddle.x,paddle.y          |
 	| numberOfBalls                        |
-	| numberOfBricks                       |
 	| #balls(id,x,y,vx,vy,isalive)         |
+	| numberOfBricks                       |
 	| #bricks(id,x,y,durability,last_hit)  |
 	----------------------------------------
 	*/
@@ -154,15 +321,15 @@ class Logic {
 	void save(std::ostream &output);
 
     private:
-	float width, height;
+	float w, h;
 
 	GameState state = RUNNING;
 
-	int next_id = 0;
-
 	std::vector<Ball> balls{};
 	std::vector<Brick> bricks{};
-	Paddle paddle{ next_id++, width / 2, height - Paddle::h };
+	std::vector<Powerup> powerups{};
+
+	Paddle paddle{ w / 2, h - Paddle::h };
 
 	int brick_count = 0;
 	int ball_count = 0;
@@ -170,18 +337,28 @@ class Logic {
 
 	int score = 0;
 	int combo = 0;
+	const int brick_points = 100;
 
-	float speed = 150;
+	float bonus_speed = 0;
 	int bounce_count = 0;
+	const float base_speed = w / 2;
+
+	const float paddle_speed = w / 2;
 
 	int lives = 3;
 
-	int addBall(float x, float y);
-	int addBrick(float x, float y, uint durability);
+	int add_ball(float x, float y, float vx = 0, float vy = 1);
 
-	template <Object T> void move(T &obj, float dt);
+	int add_brick(float x, float y, Brick::Shape shape, uint durability = 1,
+		      std::optional<Powerup::type> type = std::nullopt);
 
-	template <Object T1, Object T2> bool collide(T1 &a, T2 &b);
+	int add_powerup(float x, float y, Powerup::type type);
+
+	template <typename T> void move(T &obj, float dt);
+
+	template <typename T> void collide(Ball &ball, T &object);
+
+	void collide_brick(Ball &ball, auto &brick);
 
 	void init();
 

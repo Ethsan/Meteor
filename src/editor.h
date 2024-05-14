@@ -5,7 +5,7 @@
 #include "logic.h"
 #include "widget.h"
 #include <array>
-#include <cmath>
+#include <cstddef>
 #include <memory>
 
 struct EditorAssets {
@@ -55,10 +55,10 @@ class Editor : public State {
 
 	inline bool is_in_canva(float x, float y) const
 	{
-		return x <= canva_.getWidth() - Brick::w && x >= 0 && y <= canva_.getHeight() - Brick::h - 50 && y >= 0;
+		return x <= canva_.get_width() - Brick::rect_w && x >= 0 &&
+		       y <= canva_.get_height() - Brick::rect_h - 50 && y >= 0;
 	}
 
-	int clicked_brick = -1;
-	int clicked_origin_x = -1, clicked_origin_y = -1;
-	int clicked_brickOrigin_x = -1, clicked_brickOrigin_y = -1;
+	std::optional<std::size_t> clicked_brick = std::nullopt;
+	float click_offset_x = 0, click_offset_y = 0;
 };

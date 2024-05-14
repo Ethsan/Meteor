@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <iostream>
 #include <fstream>
+#include <optional>
 
 inline bool is_in_rect(int x, int y, SDL::Rect rect)
 {
@@ -30,12 +31,12 @@ struct RenderVisitor {
 		constexpr int max_durability = 5;
 		constexpr int dim = 96;
 
-		int off = max_durability - static_cast<int>(brick.durability);
+		int off = max_durability - static_cast<int>(brick.get_durability());
 
 		SDL::Rect src = { off * dim, 0, dim, dim };
 
-		float x = brick.x + brick.w / 2 - dim * 0.5;
-		float y = brick.y + brick.h / 2 - dim * 0.5;
+		float x = brick.get_x() - dim * 0.5;
+		float y = brick.get_y() - dim * 0.5;
 
 		SDL::FRect dst = { x, y, dim, dim };
 		renderer.copy(assets.brick, src, dst);
@@ -52,7 +53,7 @@ std::shared_ptr<State> Editor::operator()()
 		while (auto event = SDL::pollEvent()) {
 			is_mouseLeft_pressed = SDL::isPressedMouse(SDL_BUTTON_LMASK);
 			if (!is_mouseLeft_pressed)
-				clicked_brick = -1;
+				clicked_brick = std::nullopt;
 
 			if (event->type == SDL_QUIT)
 				return std::make_shared<MainScreen>(window_, renderer_);
@@ -98,8 +99,8 @@ void Editor::draw(float x, float y)
 
 	canva_.visit(RenderVisitor{ renderer_, assets_, canva_ });
 
-	renderer_.setDrawColor(0, 0, 20, 200);
-	SDL::FRect filter = { 0, canva_.getHeight() - 50, canva_.getWidth(), 50 };
+	renderer_.setDrawColor(255, 0, 0, 25);
+	SDL::FRect filter = { 0, canva_.get_height() - 50, canva_.get_width(), 50 };
 	renderer_.fillRect(filter);
 
 	constexpr int dim_x = 128;
@@ -122,16 +123,17 @@ void Editor::draw(float x, float y)
 
 void Editor::onLeftClic(float x, float y)
 {
-	Brick tmp;
-	tmp = canva_.brickLookup(x, y);
-	if (tmp.id == -1 && is_in_canva(x, y))
-		tmp = canva_.placeNewBrick(x, y, sources_[source_].getDurability());
-	if (tmp.id != -1) {
-		clicked_brick = tmp.id;
-		clicked_origin_x = x;
-		clicked_origin_y = y;
-		clicked_brickOrigin_x = tmp.x;
-		clicked_brickOrigin_y = tmp.y;
+	auto idx_brick = canva_.get_brick(x, y);
+	if (!idx_brick && is_in_canva(x, y)) {
+		auto idx = canva_.add_brick_safe(x, y, sources_[source_].getDurability());
+		if (idx)
+			idx_brick = { { *idx, canva_.get_brick(*idx) } };
+	}
+
+	if (idx_brick) {
+		clicked_brick = idx_brick->first;
+		click_offset_x = idx_brick->second.get_x() - x;
+		click_offset_y = idx_brick->second.get_y() - y;
 	}
 
 	for (unsigned int i = 0; i < sources_.size(); i++) {
@@ -157,17 +159,18 @@ void Editor::onLeftClic(float x, float y)
 
 void Editor::onRightClic(float x, float y)
 {
-	canva_.removeBrick(canva_.brickLookup(x, y).id);
+	if (auto idx = canva_.get_brick(x, y)) {
+		canva_.remove_brick(idx->first);
+	}
 }
 
 void Editor::drag(float x, float y)
 {
-	if (clicked_brick == -1)
+	if (!clicked_brick)
 		return;
 
-	float shift_x = x - clicked_origin_x, shift_y = y - clicked_origin_y;
-	float dest_x = clicked_brickOrigin_x + shift_x, dest_y = clicked_brickOrigin_y + shift_y;
+	float new_x = x + click_offset_x;
+	float new_y = y + click_offset_y;
 
-	if (is_in_canva(dest_x, dest_y))
-		canva_.placeBrick(dest_x, dest_y, clicked_brick);
+	canva_.replace_brick_safe(*clicked_brick, new_x, new_y);
 }

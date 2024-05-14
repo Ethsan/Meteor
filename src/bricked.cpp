@@ -1,5 +1,6 @@
 #include "mainscreen.h"
 #include "sdl.h"
+#include <iostream>
 
 int main(void)
 {
@@ -10,7 +11,11 @@ int main(void)
 
 	FSM fsm(std::make_shared<MainScreen>(window, renderer));
 
-	fsm.run();
+	try {
+		fsm.run();
+	} catch (const std::exception &e) {
+		std::cerr << "Exception: " << e.what() << std::endl;
+	}
 
 	return 0;
 }

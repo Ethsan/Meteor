@@ -1,22 +1,24 @@
 #include "logic.h"
 #include "vec2.h"
-
 #include <cstddef>
-#include <istream>
-#include <limits>
-#include <cmath>
-#include <stdexcept>
+
+constexpr float inf = std::numeric_limits<float>::infinity();
+
+template <> void Logic::move(Powerup &p, float dt)
+{
+	p.y += get_speed() * dt * 0.5;
+}
 
 template <> void Logic::move(Ball &ball, float dt)
 {
-	if (!ball.is_alive)
+	if (!ball.alive)
 		return;
 
-	const float width = getWidth();
-	const float height = getHeight();
+	const float width = get_width();
+	const float height = get_height();
 
 	vec2f v = { ball.vx, ball.vy };
-	v = v.normalized() * getSpeed();
+	v = v.normalized() * get_speed();
 	ball.vx = v.x;
 	ball.vy = v.y;
 
@@ -41,21 +43,21 @@ template <> void Logic::move(Ball &ball, float dt)
 
 	if (ball.y - ball.r > height) {
 		ball_count--;
-		ball.is_alive = false;
+		ball.alive = false;
 	}
 }
 
 template <> void Logic::move(Paddle &paddle, float dt)
 {
-	const float width = getWidth();
-	const float height = getHeight();
+	const float width = get_width();
+	const float height = get_height();
 
 	if (dir == NONE) {
 		;
 	} else if (dir == LEFT) {
-		paddle.x -= 200 * dt;
+		paddle.x -= paddle_speed * dt;
 	} else if (dir == RIGHT) {
-		paddle.x += 200 * dt;
+		paddle.x += paddle_speed * dt;
 	}
 
 	if (paddle.x - paddle.w / 2 < 0) {
@@ -72,7 +74,7 @@ template <> void Logic::move(Paddle &paddle, float dt)
 	}
 }
 
-vec2f closest_point(vec2f point, std::span<vec2f> vertices)
+vec2f closest_point(vec2f point, std::span<std::pair<float, float> > vertices)
 {
 	vec2f closest = vertices[0];
 	float min_dist = (point - closest).norm();
@@ -87,29 +89,25 @@ vec2f closest_point(vec2f point, std::span<vec2f> vertices)
 	return closest;
 }
 
-template <> bool Logic::collide(Ball &ball, Brick &brick)
+template <> void Logic::collide(Ball &ball, Brick &brick)
 {
-	if (brick.durability == 0)
-		return false;
+	if (brick.dura == 0 || !ball.alive)
+		return;
 
-	// simple distance check
-	float diag = std::sqrt(brick.h * brick.w);
-	vec2f vec = { ball.x - brick.x - brick.w / 2, ball.y - brick.y - brick.h / 2 };
+	auto vertices = brick.get_points();
 
-	if (vec.norm() > diag + ball.r) {
-		return false;
+	std::vector<vec2f> normals;
+	normals.reserve(vertices.size() + 1);
+
+	for (size_t i = 0; i < vertices.size(); i++) {
+		vec2f edge = vec2f(vertices[(i + 1) % vertices.size()]) - vertices[i];
+		normals.emplace_back(vec2f{ -edge.y, edge.x }.normalized());
 	}
-
-	std::array<vec2f, 4> vertices = { vec2f{ brick.x + brick.w, brick.y },
-					  vec2f{ brick.x + brick.w, brick.y + brick.h },
-					  vec2f{ brick.x, brick.y + brick.h }, vec2f{ brick.x, brick.y } };
 
 	vec2f closest = closest_point({ ball.x, ball.y }, vertices);
 	vec2f vec_ball = { ball.x - closest.x, ball.y - closest.y };
-	std::array<vec2f, 5> normals = { (vertices[1] - vertices[0]).normalized(),
-					 (vertices[2] - vertices[1]).normalized(),
-					 (vertices[3] - vertices[2]).normalized(),
-					 (vertices[0] - vertices[3]).normalized(), vec_ball.normalized() };
+	normals.emplace_back(vec_ball.normalized());
+
 	vec2f min_translation = { 0, 0 };
 	float min_overlap = std::numeric_limits<float>::infinity();
 
@@ -130,24 +128,18 @@ template <> bool Logic::collide(Ball &ball, Brick &brick)
 		float circle_min = proj - ball.r;
 
 		if (rect_min > circle_max || rect_max < circle_min) {
-			return false;
+			return;
 		}
 
 		float norm = std::abs(circle_min - rect_max);
 		if (norm == 0) { // weird edge case where the ball is exactly on the edge of the brick
-			return false;
+			return;
 		}
 		if (norm < min_overlap) {
 			min_overlap = norm;
 			min_translation = norm * normal;
 		}
 	}
-
-	brick.last_hit = getTick();
-	if (--brick.durability == 0) {
-		brick_count--;
-		score += 100;
-	};
 
 	vec2f v = { ball.vx, ball.vy };
 	vec2f normal = min_translation.normalized();
@@ -161,14 +153,29 @@ template <> bool Logic::collide(Ball &ball, Brick &brick)
 
 	bounce_count++;
 
-	return true;
+	brick.last_hit = get_tick();
+	if (brick.dura <= 0)
+		return;
+
+	brick.dura--;
+	if (brick.dura == 0) {
+		brick_count--;
+		score += brick_points;
+		if (brick.powerup) {
+			add_powerup(brick.x, brick.y, *brick.powerup);
+		}
+	}
 }
 
-template <> bool Logic::collide(Ball &ball1, Ball &ball2)
+template <> void Logic::collide(Ball &ball1, Ball &ball2)
 {
+	if (!ball1.alive || !ball2.alive) {
+		return;
+	}
+
 	vec2f vec = { ball1.x - ball2.x, ball1.y - ball2.y };
 	if (vec.norm() > ball1.r + ball2.r) {
-		return false;
+		return;
 	}
 
 	vec2f vec_unit = vec.normalized();
@@ -194,21 +201,22 @@ template <> bool Logic::collide(Ball &ball1, Ball &ball2)
 	ball2.vy = v1n.y + v2t.y;
 
 	bounce_count++;
-
-	return true;
 }
 
-template <> bool Logic::collide(Ball &ball, Paddle &paddle)
+template <> void Logic::collide(Ball &ball, Paddle &paddle)
 {
+	if (!ball.alive)
+		return;
+
 	vec2f vec = { ball.x - paddle.x, ball.y - paddle.y };
 	if (vec.norm() > ball.r + std::max(paddle.h, paddle.w) / 2)
-		return false;
+		return;
 
 	vec2f vec_unit = vec.normalized();
 	vec2f ellipse_proj = { vec_unit.x * paddle.w / 2, vec_unit.y * paddle.h / 2 };
 
 	if (vec.norm() > ball.r + ellipse_proj.norm()) {
-		return false;
+		return;
 	}
 
 	auto intersection = (ball.r + ellipse_proj.norm() - vec.norm());
@@ -226,38 +234,65 @@ template <> bool Logic::collide(Ball &ball, Paddle &paddle)
 	ball.vy = v_t.y + new_v_n.y;
 
 	bounce_count++;
-	return true;
+}
+
+template <> void Logic::collide(Ball &ball, Powerup &powerup)
+{
+	if (!ball.alive || !powerup.alive)
+		return;
+
+	vec2f vec = { ball.x - powerup.x, ball.y - powerup.y };
+	if (vec.norm() > ball.r + powerup.r)
+		return;
+
+	switch (powerup.power) {
+	case Powerup::SLOW_BALL:
+		bonus_speed -= 0.1 * h;
+		break;
+	case Powerup::FAST_BALL:
+		bonus_speed += 0.1 * h;
+		break;
+	case Powerup::EXTRA_BALL:
+		add_ball(powerup.x, powerup.y);
+		break;
+	case Powerup::EXTRA_LIFE:
+		if (lives < 3)
+			lives++;
+		break;
+
+	case Powerup::SMALL_BALL:
+		break;
+	case Powerup::BIG_BALL:
+		break;
+	case Powerup::STRONG_BALL:
+		break;
+	}
+	powerup.alive = false;
 }
 
 void Logic::step(float dt)
 {
 	tick++;
 
-	for (auto &ball : balls) {
+	for (auto &powerup : powerups)
+		move(powerup, dt);
+
+	for (auto &ball : balls)
 		move(ball, dt);
-	}
 
 	move(paddle, dt);
 
 	for (size_t i = 0; i < balls.size(); i++) {
-		Ball &ball = balls[i];
+		for (auto &brick : bricks)
+			collide(balls[i], brick);
 
-		for (auto &brick : bricks) {
-			collide(ball, brick);
-		}
+		for (auto &powerup : powerups)
+			collide(balls[i], powerup);
 
-		for (size_t j = i + 1; j < balls.size(); j++) {
-			auto &other = balls[j];
-			collide(ball, other);
-		}
+		for (size_t j = i + 1; j < balls.size(); j++)
+			collide(balls[i], balls[j]);
 
-		collide(ball, paddle);
-	}
-
-	if (bounce_count >= 4) {
-		int incr = bounce_count / 4;
-		bounce_count %= 4;
-		speed += incr * .01 * height;
+		collide(balls[i], paddle);
 	}
 
 	if (brick_count <= 0) {
@@ -267,79 +302,115 @@ void Logic::step(float dt)
 	}
 }
 
-Brick Logic::brickLookup(float x, float y)
+bool point_in_polygon(vec2f point, std::span<std::pair<float, float> > vertices)
 {
-	for (auto &brick : bricks) {
-		if (x >= brick.x && x <= brick.x + brick.w && y >= brick.y && y <= brick.y + brick.h) {
-			return brick;
-		}
+	bool inside = false;
+	for (size_t i = 0, j = vertices.size() - 1; i < vertices.size(); j = i++) {
+		if (((vertices[i].second > point.y) != (vertices[j].second > point.y)) &&
+		    (point.x < (vertices[j].first - vertices[i].first) * (point.y - vertices[i].second) /
+					       (vertices[j].second - vertices[i].second) +
+				       vertices[i].first))
+			inside = !inside;
 	}
-	return { -1, 0, 0, 0, 0 };
+	return inside;
 }
 
-Brick Logic::placeNewBrick(float x, float y, uint durability)
+std::optional<std::pair<std::size_t, Brick &> > Logic::get_brick(float x, float y)
 {
-	for (auto &brick : bricks) {
-		if ((x - brick.x < Brick::w && x - brick.x > -Brick::w) &&
-		    (y - brick.y < Brick::h && y - brick.y > -Brick::h)) {
-			return { -1, 0, 0, 0, 0 };
+	for (std::size_t i = 0; i < bricks.size(); i++) {
+		auto &brick = bricks[i];
+
+		vec2f point = { x, y };
+		auto vertices = brick.get_points();
+		if (point_in_polygon(point, vertices)) {
+			return { { i, brick } };
 		}
 	}
-	return { addBrick(x, y, durability), x, y, 0, 0 };
+	return std::nullopt;
 }
 
-void Logic::placeBrick(float x, float y, int target_id)
+std::optional<std::size_t> Logic::add_brick_safe(float x, float y, uint durability)
 {
-	size_t target;
-	for (size_t i = 0; i < bricks.size(); i++) {
-		Brick &brick = bricks[i];
-		if (target_id == brick.id) {
-			target = i;
-			continue;
+	for (auto &brick : bricks) {
+		if ((x - brick.x < brick.rect_w && x - brick.x > -brick.rect_w) &&
+		    (y - brick.y < brick.rect_h && y - brick.y > -brick.rect_h)) {
+			return std::nullopt;
 		}
+	}
+	return add_brick(x, y, Brick::RECT, durability, std::nullopt);
+}
 
-		if ((x - brick.x < Brick::w && x - brick.x > -Brick::w) &&
-		    (y - brick.y < Brick::h && y - brick.y > -Brick::h))
+void Logic::replace_brick_safe(std::size_t index, float x, float y)
+{
+	Brick &brick = bricks.at(index);
+	auto points = brick.get_points();
+
+	for (auto &point : points) {
+		float new_x = point.first + x - brick.x;
+		if (new_x < 0)
+			x -= new_x;
+		if (new_x > w)
+			x -= new_x - w;
+		float new_y = point.second + y - brick.y;
+		if (new_y < 0)
+			y -= new_y;
+		if (new_y > h)
+			y -= new_y - h;
+	}
+
+	for (auto &point : points) {
+		point.first += x - brick.x;
+		point.second += y - brick.y;
+		if (point.first < 0 || point.first > w || point.second < 0 || point.second > h)
 			return;
 	}
-	bricks[target].x = x;
-	bricks[target].y = y;
-}
 
-void Logic::removeBrick(int target_id)
-{
-	for (auto it = bricks.begin(); it != bricks.end(); it++) {
-		if (target_id == it->id) {
-			bricks.erase(it);
-			brick_count--;
-			break;
+	for (auto &other : bricks) {
+		if (&other == &brick)
+			continue;
+
+		auto vertices = other.get_points();
+		for (auto &point : points) {
+			if (point_in_polygon(point, vertices)) {
+				return;
+			}
 		}
 	}
+
+	bricks[index].x = x;
+	bricks[index].y = y;
 }
 
-int Logic::addBall(float x, float y)
+void Logic::remove_brick(std::size_t index)
 {
-	int id = next_id++;
+	bricks.erase(bricks.begin() + static_cast<long>(index));
+}
 
-	Ball ball = { id, x, y, 0, 1, true };
+int Logic::add_ball(float x, float y, float vx, float vy)
+{
+	Ball ball = { x, y, vx, vy };
+
 	balls.emplace_back(ball);
-
 	ball_count++;
 
-	return id;
+	return balls.size() - 1;
 }
 
-int Logic::addBrick(float x, float y, uint durability)
+int Logic::add_brick(float x, float y, Brick::Shape shape, uint durability, std::optional<Powerup::type> type)
 {
-	int id = next_id++;
-
-	Brick brick = { id, x, y, durability, -1 };
+	Brick brick = { x, y, shape, durability, type };
 	bricks.emplace_back(brick);
-
 	brick_count++;
-
-	return id;
+	return bricks.size() - 1;
 }
+
+int Logic::add_powerup(float x, float y, Powerup::type type)
+{
+	Powerup power = { x, y, type };
+	powerups.emplace_back(power);
+
+	return powerups.size() - 1;
+};
 
 void Logic::init()
 {
@@ -347,15 +418,13 @@ void Logic::init()
 	tick = 0;
 	score = 0;
 
-	speed = height / 2;
+	for (float x = 0; x < w; x += 50)
+		for (float y = 0; y < h / 3; y += 20)
+			add_brick(x, y, Brick::RECT, 1);
 
-	for (float x = 0; x < width; x += 50) {
-		for (float y = 0; y < height - 150; y += 20) {
-			addBrick(x, y, 1);
-		}
-	}
+	add_brick(w / 2, h / 3, Brick::HEX, 2, Powerup::type::EXTRA_BALL);
 
-	addBall(width / 2, height / 2);
+	add_ball(w / 2, h / 2);
 }
 
 void Logic::init_canva()
@@ -364,155 +433,129 @@ void Logic::init_canva()
 	tick = 0;
 	score = 0;
 
-	speed = height / 2;
-
-	addBall(width / 2, 6 * height / 7);
+	add_ball(w / 2, 6 * h / 7);
 }
 
 void Logic::save(std::ostream &output)
 {
-	output << width << "," << height << std::endl;
-	output << next_id << std::endl;
+	output << w << "," << h << std::endl;
 	output << brick_count << "," << ball_count << "," << tick << std::endl;
 	output << score << "," << combo << std::endl;
-	output << speed << "," << bounce_count << std::endl;
+	output << bonus_speed << "," << bounce_count << std::endl;
 	output << lives << std::endl;
-	output << paddle.id << "," << paddle.x << "," << paddle.y << std::endl;
+	output << paddle.x << "," << paddle.y << std::endl;
 	output << balls.size() << std::endl;
-	output << bricks.size() << std::endl;
 	for (auto &ball : balls) {
-		output << ball.id << "," << ball.x << "," << ball.y << "," << ball.vx << "," << ball.vy << ","
-		       << ball.is_alive << std::endl;
+		if (!ball.alive)
+			continue;
+		output << ball.x << "," << ball.y << "," << ball.vx << "," << ball.vy << std::endl;
 	}
+	output << bricks.size() << std::endl;
 	for (auto &brick : bricks) {
-		output << brick.id << "," << brick.x << "," << brick.y << "," << brick.durability << ","
-		       << brick.last_hit << std::endl;
+		if (brick.dura == 0)
+			continue;
+		output << brick.x << "," << brick.y << "," << brick.dura << "," << brick.last_hit << "," << brick.shape
+		       << std::endl;
 	}
 }
 
-void istreamHealthCkeck(std::istream &cin)
+void healt_check(std::istream &cin)
 {
 	if (cin.eof() || cin.bad() || cin.fail())
 		throw std::runtime_error("Bad save format");
 }
 
-Logic::Logic(std::istream &save)
-	: width(0)
-	, height(0)
+Logic Logic::load(std::istream &save)
 {
 	constexpr auto max_size = std::numeric_limits<std::streamsize>::max();
 
-	size_t numberOfBalls = 0;
-	size_t numberOfBricks = 0;
-
+	float w, h;
 	save.clear();
 
-	istreamHealthCkeck(save);
-	save >> width;
-	istreamHealthCkeck(save);
+	save >> w;
 	save.ignore(max_size, ',');
-	save >> height;
-	istreamHealthCkeck(save);
+	save >> h;
 	save.ignore(max_size, '\n');
-	save >> next_id;
-	istreamHealthCkeck(save);
+	healt_check(save);
+
+	Logic logic{ w, h, true };
+
+	healt_check(save);
+	save >> logic.tick;
+	healt_check(save);
 	save.ignore(max_size, '\n');
-	save >> brick_count;
-	istreamHealthCkeck(save);
+	save >> logic.score;
+	healt_check(save);
 	save.ignore(max_size, ',');
+	save >> logic.combo;
+	healt_check(save);
+	save.ignore(max_size, '\n');
+	save >> logic.bonus_speed;
+	healt_check(save);
+	save.ignore(max_size, ',');
+	save >> logic.bounce_count;
+	healt_check(save);
+	save.ignore(max_size, '\n');
+	save >> logic.lives;
+	healt_check(save);
+	save.ignore(max_size, ',');
+	save >> logic.paddle.x;
+	healt_check(save);
+	save.ignore(max_size, ',');
+	save >> logic.paddle.y;
+	healt_check(save);
+	save.ignore(max_size, '\n');
+
+	size_t ball_count = 0;
 	save >> ball_count;
-	istreamHealthCkeck(save);
-	save.ignore(max_size, ',');
-	save >> tick;
-	istreamHealthCkeck(save);
-	save.ignore(max_size, '\n');
-	save >> score;
-	istreamHealthCkeck(save);
-	save.ignore(max_size, ',');
-	save >> combo;
-	istreamHealthCkeck(save);
-	save.ignore(max_size, '\n');
-	save >> speed;
-	istreamHealthCkeck(save);
-	save.ignore(max_size, ',');
-	save >> bounce_count;
-	istreamHealthCkeck(save);
-	save.ignore(max_size, '\n');
-	save >> lives;
-	istreamHealthCkeck(save);
-	save.ignore(max_size, '\n');
-	save >> paddle.id;
-	istreamHealthCkeck(save);
-	save.ignore(max_size, ',');
-	save >> paddle.x;
-	istreamHealthCkeck(save);
-	save.ignore(max_size, ',');
-	save >> paddle.y;
-	istreamHealthCkeck(save);
-	save.ignore(max_size, '\n');
-	save >> numberOfBalls;
-	istreamHealthCkeck(save);
-	save.ignore(max_size, '\n');
-	save >> numberOfBricks;
-	istreamHealthCkeck(save);
+	healt_check(save);
 	save.ignore(max_size, '\n');
 
-	balls.reserve(numberOfBalls);
-	bricks.reserve(numberOfBricks);
-
-	for (size_t i = 0; i < numberOfBalls; i++) {
-		int id;
+	for (size_t i = 0; i < ball_count; i++) {
 		float x, y, vx, vy;
-		bool is_alive;
 
-		istreamHealthCkeck(save);
-		save >> id;
-		istreamHealthCkeck(save);
-		save.ignore(max_size, ',');
+		healt_check(save);
 		save >> x;
-		istreamHealthCkeck(save);
+		healt_check(save);
 		save.ignore(max_size, ',');
 		save >> y;
-		istreamHealthCkeck(save);
+		healt_check(save);
 		save.ignore(max_size, ',');
 		save >> vx;
-		istreamHealthCkeck(save);
+		healt_check(save);
 		save.ignore(max_size, ',');
 		save >> vy;
-		istreamHealthCkeck(save);
-		save.ignore(max_size, ',');
-		save >> is_alive;
-		istreamHealthCkeck(save);
+		healt_check(save);
 		save.ignore(max_size, '\n');
 
-		Ball ball = { id, x, y, vx, vy, is_alive };
-		balls.emplace_back(ball);
+		logic.add_ball(x, y, vx, vy);
 	}
 
-	for (size_t i = 0; i < numberOfBricks; i++) {
-		int id;
+	size_t brick_count = 0;
+	save >> brick_count;
+	healt_check(save);
+	save.ignore(max_size, '\n');
+
+	for (size_t i = 0; i < brick_count; i++) {
 		float x, y;
 		uint durability;
-		int last_hit;
+		int shape;
 
-		istreamHealthCkeck(save);
-		save >> id;
-		istreamHealthCkeck(save);
-		save.ignore(max_size, ',');
+		healt_check(save);
 		save >> x;
-		istreamHealthCkeck(save);
+		healt_check(save);
 		save.ignore(max_size, ',');
 		save >> y;
-		istreamHealthCkeck(save);
+		healt_check(save);
 		save.ignore(max_size, ',');
 		save >> durability;
-		istreamHealthCkeck(save);
-		save.ignore(max_size, ',');
-		save >> last_hit;
-		istreamHealthCkeck(save);
+		healt_check(save);
 		save.ignore(max_size, '\n');
+		save >> shape;
+		healt_check(save);
 
-		Brick brick = { id, x, y, durability, last_hit };
-		bricks.emplace_back(brick);
+		logic.add_brick(x, y, Brick::Shape(shape), durability);
 	}
+
+	return logic;
 }

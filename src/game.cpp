@@ -15,37 +15,43 @@ struct RenderVisitor {
 
 	void operator()(const Brick &brick)
 	{
-		constexpr int max_durability = 5;
+		constexpr int max_dura = 5;
 		constexpr int dim = 96;
 
 		int off = 0;
-		if (brick.durability == 0) {
-			int anim = (logic.getTick() - brick.last_hit) / 4;
+		if (brick.get_durability() == 0) {
+			int anim = (logic.get_tick() - brick.get_last_hit()) / 4;
 			if (anim >= 6)
 				return;
 			off = 4 + anim;
 		} else {
-			off = max_durability - static_cast<int>(brick.durability);
+			off = max_dura - static_cast<int>(brick.get_durability());
 		}
 
 		SDL::Rect src = { off * dim, 0, dim, dim };
 
-		float x = brick.x + brick.w / 2 - dim * 0.5;
-		float y = brick.y + brick.h / 2 - dim * 0.5;
+		float x = brick.get_x() - dim / 2.;
+		float y = brick.get_y() - dim / 2.;
 
 		SDL::FRect dst = { x, y, dim, dim };
-		renderer.copy(assets.brick, src, dst);
+		switch (brick.get_form()) {
+		case Brick::RECT:
+			return renderer.copy(assets.brick, src, dst);
+		case Brick::HEX:
+			return renderer.copy(assets.brick, src, dst);
+		}
 	}
+
 	void operator()(const Ball &ball)
 	{
 		constexpr int dim = 32;
 
-		int off = logic.getTick() / 4 % 8;
+		int off = logic.get_tick() / 4 % 8;
 
 		SDL::Rect src = { off * dim, 0, dim, dim };
 
-		float x = ball.x - dim * 0.5;
-		float y = ball.y - dim * 0.5;
+		float x = ball.get_x() - dim * 0.5;
+		float y = ball.get_y() - dim * 0.5;
 		SDL::FRect dst = { x, y, dim, dim };
 		renderer.copy(assets.ball, src, dst);
 	}
@@ -58,17 +64,16 @@ struct RenderVisitor {
 
 		SDL::Rect src = { dim * off, 0, dim, dim };
 
-		float x = paddle.x - dim * 0.5;
-		float y = paddle.y - dim * 0.5;
+		float x = paddle.get_x() - dim * 0.5;
+		float y = paddle.get_y() - dim * 0.5;
 
 		SDL::FRect dst = { x, y, dim, dim };
 		renderer.copy(assets.paddle, src, dst);
 
-		off = logic.getTick() / 4 % 8;
+		off = logic.get_tick() / 4 % 8;
 
-		y += 4;
+		dst.y += 4;
 
-		dst = { x, y, dim, dim };
 		if (logic.dir == LEFT) {
 			src = { dim * (off + 1), 0, dim, dim };
 			renderer.copy(assets.ship_left, src, dst);
@@ -101,7 +106,7 @@ std::shared_ptr<State> Game::operator()()
 
 		logic_.step(16.f / 1000);
 
-		if (logic_.getState() != Logic::GameState::RUNNING) {
+		if (logic_.get_state() != Logic::GameState::RUNNING) {
 			return end();
 		}
 
@@ -146,7 +151,7 @@ void Game::draw()
 	renderer_.copy(assets_.ui, src, dst);
 
 	SDL::Texture score =
-		ui_factory_.create_label(renderer_, std::to_string(logic_.getScore()), { 255, 255, 255, 255 });
+		ui_factory_.create_label(renderer_, std::to_string(logic_.get_score()), { 255, 255, 255, 255 });
 
 	SDL::Rect scoreRect = score.getRect();
 	SDL::FRect scoreDst = { 350.f - scoreRect.w * 0.5f, 30.f - scoreRect.h * 0.5f, static_cast<float>(scoreRect.w),
@@ -158,7 +163,7 @@ void Game::draw()
 
 	renderer_.copy(score, scoreRect, scoreDst);
 
-	for (int i = 0; i < logic_.getLives() - 1; ++i) {
+	for (int i = 0; i < logic_.get_lives() - 1; ++i) {
 		ballDst.x = 340.f - ball_dim * 0.5f + i * 48.f / 2.f;
 		renderer_.copy(assets_.ball, ballRect, ballDst);
 	}
@@ -321,7 +326,7 @@ std::optional<std::shared_ptr<State> > Game::resume()
 std::shared_ptr<State> Game::end()
 {
 	std::string title_text;
-	if (logic_.getState() == Logic::GameState::WIN) {
+	if (logic_.get_state() == Logic::GameState::WIN) {
 		title_text = "YOU WIN";
 	} else {
 		title_text = "YOU LOSE";
@@ -340,7 +345,7 @@ std::shared_ptr<State> Game::end()
 	Element score_text(ui_factory_.create_label(renderer_, "Score :", { 255, 255, 255, 255 }));
 	score_text.dst = { 150 - score_text.src.w / 2, box.dst.y + 16, score_text.src.w, score_text.src.h };
 
-	Element score(ui_factory_.create_label(renderer_, std::to_string(logic_.getScore()), { 255, 255, 255, 255 }));
+	Element score(ui_factory_.create_label(renderer_, std::to_string(logic_.get_score()), { 255, 255, 255, 255 }));
 	score.dst = { 150 - score.src.w / 2, score_text.dst.y + score_text.dst.h + 16, score.src.w, score.src.h };
 
 	Button home(ui_factory_.create_home_button(renderer_), ui_factory_.create_home_button_over(renderer_));
