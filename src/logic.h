@@ -232,7 +232,6 @@ class Logic {
 			init();
 	}
 
-	Logic(std::istream &save);
 
 	static Logic load(const std::string &save_file)
 	{

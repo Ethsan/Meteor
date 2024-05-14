@@ -1,6 +1,10 @@
 #include "logic.h"
 #include "vec2.h"
 
+#include <cstddef>
+#include <istream>
+#include <limits>
+#include "exception.h"
 #include <optional>
 #include <span>
 
@@ -468,7 +472,7 @@ void Logic::save(std::ostream &output)
 void health_check(std::istream &cin)
 {
 	if (cin.eof() || cin.bad() || cin.fail())
-		throw std::runtime_error("Bad save format");
+		throw BadSaveFormat();
 }
 
 Logic Logic::load(std::istream &save)

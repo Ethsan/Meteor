@@ -4,8 +4,8 @@
 #include "SDL_keycode.h"
 #include "sdl.h"
 #include "game.h"
+#include "exception.h"
 #include <filesystem>
-#include <memory>
 
 constexpr float y_shift = 20, y_off = 2;
 
@@ -24,7 +24,7 @@ std::shared_ptr<State> Selection::operator()()
 
 		switch (event.type) {
 		case SDL_QUIT:
-			throw std::runtime_error("Quit");
+			throw Close();
 		case SDL_KEYDOWN:
 			if (event.key.keysym.sym == SDLK_UP) {
 				up();
@@ -34,8 +34,14 @@ std::shared_ptr<State> Selection::operator()()
 				down();
 				needRedraw = true;
 			}
-			if (event.key.keysym.sym == SDLK_RETURN)
-				return std::make_shared<Game>(window_, renderer_, save_files[target].getText());
+			if (event.key.keysym.sym == SDLK_RETURN){
+				try{
+					return std::make_shared<Game>(window_, renderer_, save_files[target].getText());
+				}
+				catch(BadSaveFormat const&){
+					return std::make_shared<Game>(window_,renderer_);
+				}
+			}
 			break;
 		case SDL_MOUSEBUTTONDOWN:
 			y = event.motion.y;

@@ -3,6 +3,7 @@
 #include "editor.h"
 #include "selection.h"
 #include "sdl.h"
+#include "exception.h"
 
 inline bool is_in_rect(int x, int y, SDL::Rect rect)
 {
@@ -21,7 +22,7 @@ std::shared_ptr<State> MainScreen::operator()()
 
 		switch (event.type) {
 		case SDL_QUIT:
-			throw std::runtime_error("Quit");
+			throw Close();
 		case SDL_MOUSEMOTION:
 			keyTarget_ = 5;
 			x = event.motion.x;
@@ -35,7 +36,7 @@ std::shared_ptr<State> MainScreen::operator()()
 				return std::make_shared<Selection>(window_, renderer_);
 			}
 			if (is_in_rect(x, y, exit_.getRect())) {
-				throw std::runtime_error("Quit");
+				throw Close();
 			}
 			if (is_in_rect(x, y, editor_.getRect())) {
 				return std::make_shared<Editor>(window_, renderer_);
@@ -56,7 +57,7 @@ std::shared_ptr<State> MainScreen::operator()()
 				case 0:
 					return std::make_shared<Selection>(window_, renderer_);
 				case 1:
-					throw std::runtime_error("Quit");
+					throw Close();
 				case 2:
 					return std::make_shared<Editor>(window_, renderer_);
 				}

@@ -11,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <optional>
+#include "exception.h"
 
 inline bool is_in_rect(int x, int y, SDL::Rect rect)
 {
@@ -56,7 +57,7 @@ std::shared_ptr<State> Editor::operator()()
 				clicked_brick = std::nullopt;
 
 			if (event->type == SDL_QUIT)
-				return std::make_shared<MainScreen>(window_, renderer_);
+				throw Close();
 			if (event->type == SDL_MOUSEMOTION) {
 				x = event->motion.x;
 				y = event->motion.y;
@@ -154,6 +155,7 @@ void Editor::onLeftClic(float x, float y)
 
 		std::ofstream out("save/save_" + time + ".save", std::ios::out);
 		canva_.save(out);
+		out.close();
 	}
 }
 

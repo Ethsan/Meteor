@@ -2,6 +2,8 @@
 #include "logic.h"
 #include "sdl.h"
 #include "mainscreen.h"
+#include "widget.h"
+#include "exception.h"
 
 struct RenderVisitor {
 	SDL::Renderer &renderer;
@@ -105,9 +107,7 @@ std::shared_ptr<State> Game::operator()()
 	for (;;) {
 		while (auto event = SDL::pollEvent()) {
 			if (event->type == SDL_QUIT) {
-				if (auto state = pause()) {
-					return *state;
-				}
+				throw Close();
 			} else if (event->type == SDL_KEYDOWN) {
 				if (event->key.keysym.sym == SDLK_ESCAPE) {
 					if (auto state = pause()) {
@@ -279,7 +279,7 @@ std::optional<std::shared_ptr<State> > Game::pause()
 		while (auto event = SDL::pollEvent()) {
 			switch (event->type) {
 			case SDL_QUIT:
-				return std::make_shared<MainScreen>(window_, renderer_);
+				throw Close();
 			case SDL_KEYDOWN:
 				if (event->key.keysym.sym == SDLK_ESCAPE) {
 					return resume();
@@ -406,7 +406,7 @@ std::shared_ptr<State> Game::end()
 		while (auto event = SDL::pollEvent()) {
 			switch (event->type) {
 			case SDL_QUIT:
-				return std::make_shared<MainScreen>(window_, renderer_);
+				throw Close();
 			case SDL_MOUSEBUTTONDOWN:
 				int x = event->button.x;
 				int y = event->button.y;
