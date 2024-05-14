@@ -4,7 +4,7 @@ ASSET_DIR=assets
 
 CC = g++
 
-CFLAGS = -Wall -Weffc++ -Wextra -Wsign-conversion -Werror -std=c++23
+CFLAGS = -Wall -Weffc++ -Wextra -Wsign-conversion -Werror -std=c++20
 CFLAGS += $(shell sdl2-config --cflags)
 CFLAGS += -I$(SRC_DIR)
 
