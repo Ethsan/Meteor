@@ -279,6 +279,11 @@ class Logic {
 		return lives;
 	}
 
+	int get_ball_count() const
+	{
+		return ball_count;
+	}
+
 	template <typename T> void visit(T &&visitor)
 	{
 		for (auto &ball : balls) {
@@ -293,6 +298,8 @@ class Logic {
 		}
 		visitor(paddle);
 	}
+
+	void launch_ball();
 
 	Paddle &get_paddle()
 	{

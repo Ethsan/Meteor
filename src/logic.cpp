@@ -306,9 +306,17 @@ void Logic::step(float dt)
 
 	if (brick_count <= 0) {
 		state = WIN;
-	} else if (ball_count <= 0) {
+	} else if (ball_count <= 0 && lives <= 0) {
 		state = LOST;
 	}
+}
+
+void Logic::launch_ball()
+{
+	if (lives <= 0)
+		return;
+	add_ball(paddle.x, paddle.y - paddle.h / 2, 0, -1);
+	lives--;
 }
 
 bool point_in_polygon(vec2f point, std::span<std::pair<float, float> > vertices)
@@ -432,8 +440,6 @@ void Logic::init()
 			add_brick(x, y, Brick::HEX, 5, std::nullopt);
 	//test powerups
 	add_brick(w / 3, h / 2, Brick::RECT, 1, Powerup::EXTRA_BALL);
-
-	add_ball(w / 2, h / 2);
 }
 
 void Logic::save(std::ostream &output)

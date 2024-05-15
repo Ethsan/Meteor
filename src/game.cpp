@@ -1,4 +1,5 @@
 #include "game.h"
+#include "SDL_keycode.h"
 #include "logic.h"
 #include "sdl.h"
 #include "mainscreen.h"
@@ -100,6 +101,10 @@ struct RenderVisitor {
 			src = { 0, 0, dim, dim };
 			renderer.copy(assets.ship, src, dst);
 		}
+
+		if (logic.get_ball_count() == 0) {
+			(*this)(Ball(paddle.get_x(), paddle.get_y() - paddle.h / 2. - Ball::r, 0, 0));
+		}
 	}
 };
 
@@ -110,16 +115,25 @@ std::shared_ptr<State> Game::operator()()
 
 	for (;;) {
 		while (auto event = SDL::pollEvent()) {
-			if (event->type == SDL_QUIT) {
+			switch (event->type) {
+			case SDL_QUIT:
 				throw Close();
-			} else if (event->type == SDL_KEYDOWN) {
-				if (event->key.keysym.sym == SDLK_ESCAPE) {
+			case SDL_KEYDOWN:
+				switch (event->key.keysym.sym) {
+				case SDLK_ESCAPE:
 					if (auto state = pause()) {
+						// quit to the menu
 						return *state;
 					}
-				}
-			} else if (event->type == SDL_MOUSEMOTION) {
+					break;
+				case SDLK_SPACE:
+					logic_.launch_ball();
+					break;
+				};
+				break;
+			case SDL_MOUSEMOTION:
 				mouse_pos = std::make_pair(event->motion.x, event->motion.y);
+				break;
 			}
 		}
 
@@ -159,7 +173,7 @@ std::shared_ptr<State> Game::operator()()
 		renderer_.present();
 
 		SDL::delay(16);
-	};
+	}
 }
 
 void Game::draw()
@@ -196,7 +210,7 @@ void Game::draw()
 
 	renderer_.copy(score, scoreRect, scoreDst);
 
-	for (int i = 0; i < logic_.get_lives() - 1; ++i) {
+	for (int i = 0; i < std::min(logic_.get_lives(), 2); ++i) {
 		ballDst.x = 340.f - ball_dim * 0.5f + i * 48.f / 2.f;
 		renderer_.copy(assets_.ball, ballRect, ballDst);
 	}

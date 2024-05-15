@@ -20,10 +20,7 @@ class Editor : public State {
 		, sources_({ Material{ renderer_, 5, true, 325, 90 }, Material{ renderer_, 4, false, 325, 120 },
 			     Material{ renderer_, 3, false, 325, 150 }, Material{ renderer_, 2, false, 325, 180 },
 			     Material{ renderer_, 1, false, 325, 210 } })
-		, canva_(300, 300, false)
-	{
-		canva_.add_ball(300 / 2., 300 / 2.);
-	};
+		, canva_(300, 300, false){};
 
 	std::shared_ptr<State> operator()();
 
