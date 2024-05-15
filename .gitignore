@@ -11,3 +11,5 @@ bricked
 test_runner
 
 test/testResult.save
+
+save/*.save
