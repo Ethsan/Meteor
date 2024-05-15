@@ -1,21 +1,25 @@
 #include "selection.h"
 
-#include "SDL_events.h"
-#include "SDL_keycode.h"
-#include "sdl.h"
-#include "game.h"
 #include "exception.h"
+#include "game.h"
+#include "sdl.h"
+
+#include <algorithm>
 #include <filesystem>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
 
 constexpr float y_shift = 20, y_off = 2;
 
 std::shared_ptr<State> Selection::operator()()
 {
 	if (save_files.empty())
-		return std::make_shared<Game>(window_, renderer_);
+		return std::make_shared<Game>(window, renderer);
 
 	float y = 0;
-	bool needRedraw = false;
+	bool is_redraw_needed = false;
 
 	draw();
 
@@ -28,48 +32,47 @@ std::shared_ptr<State> Selection::operator()()
 		case SDL_KEYDOWN:
 			if (event.key.keysym.sym == SDLK_UP) {
 				up();
-				needRedraw = true;
+				is_redraw_needed = true;
 			}
 			if (event.key.keysym.sym == SDLK_DOWN) {
 				down();
-				needRedraw = true;
+				is_redraw_needed = true;
 			}
 			if (event.key.keysym.sym == SDLK_RETURN) {
 				try {
-					return std::make_shared<Game>(window_, renderer_, save_files[target].getText());
-				} catch (BadSaveFormat const &) {
-					return std::make_shared<Game>(window_, renderer_);
+					return std::make_shared<Game>(window, renderer, save_files[target].get_text());
+				} catch (Bad_format const &) {
+					return std::make_shared<Game>(window, renderer);
 				}
 			}
 			break;
 		case SDL_MOUSEBUTTONDOWN:
 			y = event.motion.y;
-			onClic(y);
-			needRedraw = true;
+			on_click(y);
+			is_redraw_needed = true;
 			break;
 		}
 
-		if (needRedraw) {
+		if (is_redraw_needed) {
 			draw();
-			needRedraw = false;
+			is_redraw_needed = false;
 		}
 	}
 }
 
 void Selection::draw()
 {
-	renderer_.setDrawColor(bg);
-	renderer_.clear();
+	renderer.setDrawColor(bg);
+	renderer.clear();
 
 	for (size_t i = 0; i < save_files.size(); i++) {
-		save_files[i].draw(renderer_, i == target);
+		save_files[i].draw(renderer, i == target);
 	}
 
-	renderer_.setDrawColor(cursorColor);
-	SDL::FRect cursorRect = { 0, cursor * y_shift, 400, y_shift };
-	renderer_.fillRect(cursorRect);
+	renderer.setDrawColor(cursor_color);
+	renderer.fillRect(SDL::FRect{ 0, cursor * y_shift, 400, y_shift });
 
-	renderer_.present();
+	renderer.present();
 }
 
 void Selection::up()
@@ -80,7 +83,7 @@ void Selection::up()
 	target--;
 
 	if (cursor == 0) {
-		verticalShift--;
+		vert_shift--;
 		for (auto &file : save_files)
 			file.y = file.y + y_shift;
 	} else {
@@ -98,7 +101,7 @@ void Selection::down()
 	target++;
 
 	if (cursor >= cursor_max) {
-		verticalShift++;
+		vert_shift++;
 		for (auto &file : save_files)
 			file.y = file.y - y_shift;
 	} else {
@@ -106,13 +109,13 @@ void Selection::down()
 	}
 }
 
-void Selection::onClic(float y)
+void Selection::on_click(float y)
 {
-	unsigned int tmpCursor = static_cast<unsigned int>(y / y_shift);
+	unsigned int new_cursor = static_cast<unsigned int>(y / y_shift);
 
-	if (tmpCursor + verticalShift < save_files.size()) {
-		cursor = tmpCursor;
-		target = tmpCursor + verticalShift;
+	if (new_cursor + vert_shift < save_files.size()) {
+		cursor = new_cursor;
+		target = new_cursor + vert_shift;
 	}
 }
 
@@ -124,10 +127,11 @@ void Selection::init()
 	for (const auto &entry : std::filesystem::directory_iterator("save")) {
 		std::ostringstream s;
 		s << entry.path();
-		std::string fileName{ s.str() };
-		fileName.erase(remove(fileName.begin(), fileName.end(), '\"'), fileName.end());
 
-		save_files.emplace_back(fileName, font, textColor, textColor_h, renderer_, x, y);
+		std::string filename{ s.str() };
+		filename.erase(std::remove(filename.begin(), filename.end(), '\"'), filename.end());
+
+		save_files.emplace_back(filename, font, fg, hl, renderer, x, y);
 		y = y + y_shift;
 	}
 }

@@ -1,15 +1,16 @@
 #include "mainscreen.h"
-#include "SDL_events.h"
+
 #include "editor.h"
-#include "selection.h"
 #include "sdl.h"
-#include "exception.h"
+#include "selection.h"
+
+#include <memory>
 
 std::shared_ptr<State> MainScreen::operator()()
 {
 	int x = 0, y = 0;
-	bool needRedraw = true;
-	float windowWidth = window_.getSize().first, windowHight = window_.getSize().second;
+	bool is_redraw_needed = true;
+	float width = window.getSize().first, height = window.getSize().second;
 	float alpha = 0, beta = 0;
 
 	for (;;) {
@@ -19,63 +20,63 @@ std::shared_ptr<State> MainScreen::operator()()
 		case SDL_QUIT:
 			throw Close();
 		case SDL_MOUSEMOTION:
-			keyTarget_ = 5;
+			key_target = 5;
 			x = event.motion.x;
 			y = event.motion.y;
-			alpha = -(static_cast<double>(x) - (windowWidth / 2)) / (30 * windowWidth);
-			beta = -(static_cast<double>(y) - (windowHight / 2)) / (30 * windowHight);
-			needRedraw = true;
+			alpha = -(static_cast<double>(x) - (width / 2)) / (30 * width);
+			beta = -(static_cast<double>(y) - (height / 2)) / (30 * height);
+			is_redraw_needed = true;
 			break;
 		case SDL_MOUSEBUTTONDOWN:
-			if (play_.isOver(x, y)) {
-				return std::make_shared<Selection>(window_, renderer_);
+			if (play.is_over(x, y)) {
+				return std::make_shared<Selection>(window, renderer);
 			}
-			if (exit_.isOver(x, y)) {
+			if (exit.is_over(x, y)) {
 				throw Close();
 			}
-			if (editor_.isOver(x, y)) {
-				return std::make_shared<Editor>(window_, renderer_);
+			if (editor.is_over(x, y)) {
+				return std::make_shared<Editor>(window, renderer);
 			}
 			break;
 		case SDL_KEYDOWN:
 			if (event.key.keysym.sym == SDLK_UP) {
-				keyTarget_ = (keyTarget_ + 2) % 3;
-				needRedraw = true;
+				key_target = (key_target + 2) % 3;
+				is_redraw_needed = true;
 			}
 			if (event.key.keysym.sym == SDLK_DOWN) {
-				keyTarget_ = (keyTarget_ + 1) % 3;
-				needRedraw = true;
+				key_target = (key_target + 1) % 3;
+				is_redraw_needed = true;
 			}
 			if (event.key.keysym.sym == SDLK_RETURN) {
-				switch (keyTarget_) {
+				switch (key_target) {
 				case 5:
 				case 0:
-					return std::make_shared<Selection>(window_, renderer_);
+					return std::make_shared<Selection>(window, renderer);
 				case 1:
 					throw Close();
 				case 2:
-					return std::make_shared<Editor>(window_, renderer_);
+					return std::make_shared<Editor>(window, renderer);
 				}
 			}
 			break;
 		}
 
-		if (needRedraw) {
-			needRedraw = false;
-			renderer_.setDrawColor(bg);
-			renderer_.clear();
+		if (is_redraw_needed) {
+			is_redraw_needed = false;
+			renderer.setDrawColor(bg);
+			renderer.clear();
 			// Draw the background
-			stars_.draw(renderer_, alpha, beta);
-			dust_.draw(renderer_, alpha, beta);
-			nebulae_.draw(renderer_, alpha, beta);
-			planets_.draw(renderer_, alpha, beta);
+			stars.draw(renderer, alpha, beta);
+			dust.draw(renderer, alpha, beta);
+			nebulae.draw(renderer, alpha, beta);
+			planets.draw(renderer, alpha, beta);
 			// Draw the title
-			title_.draw(renderer_);
-			play_.draw(renderer_, (keyTarget_ == 5 && play_.isOver(x, y)) || keyTarget_ == 0);
-			exit_.draw(renderer_, (keyTarget_ == 5 && exit_.isOver(x, y)) || keyTarget_ == 1);
-			editor_.draw(renderer_, (keyTarget_ == 5 && editor_.isOver(x, y)) || keyTarget_ == 2);
+			title.draw(renderer);
+			play.draw(renderer, (key_target == 5 && play.is_over(x, y)) || key_target == 0);
+			exit.draw(renderer, (key_target == 5 && exit.is_over(x, y)) || key_target == 1);
+			editor.draw(renderer, (key_target == 5 && editor.is_over(x, y)) || key_target == 2);
 			// Present the screen
-			renderer_.present();
+			renderer.present();
 		}
 	}
 }

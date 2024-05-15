@@ -1,9 +1,8 @@
-#include <cmath>
-#include <cstddef>
-#include <vector>
-#include <span>
 #include <algorithm>
+#include <cmath>
+#include <span>
 #include <stdexcept>
+#include <vector>
 
 template <typename T> class Grid {
     private:
@@ -87,7 +86,7 @@ template <typename T> class Grid {
 	}
 };
 
-class CollisionGrid {
+class Collision_grid {
     private:
 	struct Cell {
 		uint cycle;
@@ -100,7 +99,7 @@ class CollisionGrid {
 	Grid<Cell> grid;
 
     public:
-	CollisionGrid(float width, float height, float cell_size)
+	Collision_grid(float width, float height, float cell_size)
 		: cell_size(cell_size)
 		, grid(width / cell_size, height / cell_size, { cycle, {} })
 	{
@@ -111,11 +110,11 @@ class CollisionGrid {
 		cycle++;
 	}
 
-	void addObject(float minX, float minY, float maxX, float maxY, uint id);
+	void add_object(float minX, float minY, float maxX, float maxY, uint id);
 
-	std::vector<uint> getCollisions(float minX, float minY, float maxX, float maxY) const;
+	std::vector<uint> get_collisions(float minX, float minY, float maxX, float maxY) const;
 
-	std::vector<std::pair<uint, uint> > getAllCollisions() const;
+	std::vector<std::pair<uint, uint> > get_all_collisions() const;
 };
 template <typename T> void remove_duplicates(std::vector<T> &v)
 {
@@ -124,7 +123,7 @@ template <typename T> void remove_duplicates(std::vector<T> &v)
 	v.erase(it, v.end());
 }
 
-inline void CollisionGrid::addObject(float minX, float minY, float maxX, float maxY, uint id)
+inline void Collision_grid::add_object(float minX, float minY, float maxX, float maxY, uint id)
 {
 	size_t width = grid.size().first;
 	size_t height = grid.size().second;
@@ -147,7 +146,7 @@ inline void CollisionGrid::addObject(float minX, float minY, float maxX, float m
 	}
 }
 
-inline std::vector<uint> CollisionGrid::getCollisions(float minX, float minY, float maxX, float maxY) const
+inline std::vector<uint> Collision_grid::get_collisions(float minX, float minY, float maxX, float maxY) const
 {
 	std::vector<uint> result;
 
@@ -175,7 +174,7 @@ inline std::vector<uint> CollisionGrid::getCollisions(float minX, float minY, fl
 	return result;
 }
 
-inline std::vector<std::pair<uint, uint> > CollisionGrid::getAllCollisions() const
+inline std::vector<std::pair<uint, uint> > Collision_grid::get_all_collisions() const
 {
 	std::vector<std::pair<uint, uint> > collisions;
 

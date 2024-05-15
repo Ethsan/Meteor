@@ -1,5 +1,6 @@
 #include <cmath>
 #include <ostream>
+#include <utility>
 
 template <typename T = float> struct vec2 {
 	T x, y;

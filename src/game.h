@@ -1,9 +1,12 @@
 #pragma once
 
 #include "fsm.h"
-#include "sdl.h"
 #include "logic.h"
+#include "sdl.h"
 #include "widget.h"
+
+#include <memory>
+#include <optional>
 #include <string>
 
 struct Assets {
@@ -33,34 +36,34 @@ struct Assets {
 
 class Game : public State {
     public:
-	Game(const SDL::Window &window, const SDL::Renderer &renderer)
-		: window_(window)
-		, renderer_(renderer)
-		, save_file_()
-		, logic_(300, 300, true)
-		, assets_(renderer_)
-		, ui_factory_(renderer_){};
+	Game(const SDL::Window &w, const SDL::Renderer &r)
+		: window(w)
+		, renderer(r)
+		, save_file()
+		, logic(300, 300, true)
+		, assets(renderer)
+		, ui_factory(renderer){};
 
-	Game(const SDL::Window &window, const SDL::Renderer &renderer, const std::string save_file)
-		: window_(window)
-		, renderer_(renderer)
-		, save_file_(save_file)
-		, logic_(Logic::load(save_file))
-		, assets_{ renderer_ }
-		, ui_factory_(renderer_){};
+	Game(const SDL::Window &w, const SDL::Renderer &r, const std::string save_file)
+		: window(w)
+		, renderer(r)
+		, save_file(save_file)
+		, logic(Logic::load(save_file))
+		, assets{ renderer }
+		, ui_factory(renderer){};
 
 	std::shared_ptr<State> operator()() override;
 	void draw();
 
     private:
-	SDL::Window window_;
-	SDL::Renderer renderer_;
+	SDL::Window window;
+	SDL::Renderer renderer;
 
-	const std::string save_file_;
+	const std::string save_file;
 
-	Logic logic_;
-	Assets assets_;
-	UI_Factory ui_factory_;
+	Logic logic;
+	Assets assets;
+	UI_Factory ui_factory;
 
 	std::optional<std::shared_ptr<State> > pause();
 	std::optional<std::shared_ptr<State> > resume();

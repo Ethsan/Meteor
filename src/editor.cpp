@@ -1,20 +1,21 @@
 #include "editor.h"
-#include "SDL_events.h"
-#include "SDL_mouse.h"
+
+#include "exception.h"
 #include "game.h"
 #include "logic.h"
 #include "mainscreen.h"
 #include "sdl.h"
 #include "widget.h"
-#include <SDL_events.h>
+
 #include <ctime>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <fstream>
+#include <memory>
 #include <optional>
-#include "exception.h"
+#include <sstream>
 
-struct RenderVisitor {
+struct Render_visitor {
 	SDL::Renderer &renderer;
 	const Assets &assets;
 	const Logic &logic;
@@ -37,9 +38,9 @@ struct RenderVisitor {
 
 		SDL::FRect dst = { x, y, dim, dim };
 		switch (brick.get_form()) {
-		case Brick::RECT:
+		case Brick::rect:
 			return renderer.copy(assets.brick_rect, src, dst);
-		case Brick::HEX:
+		case Brick::hex:
 			return renderer.copy(assets.brick_hex, src, dst);
 		}
 	}
@@ -48,14 +49,14 @@ struct RenderVisitor {
 std::shared_ptr<State> Editor::operator()()
 {
 	float x = 0, y = 0;
-	bool needRedraw = true;
-	bool is_mouseLeft_pressed = false;
+	bool is_redraw_needed = true;
+	bool is_left_pressed = false;
 
 	for (;;) {
 		auto event = SDL::waitEvent();
 
-		is_mouseLeft_pressed = SDL::isPressedMouse(SDL_BUTTON_LMASK);
-		if (!is_mouseLeft_pressed)
+		is_left_pressed = SDL::isPressedMouse(SDL_BUTTON_LMASK);
+		if (!is_left_pressed)
 			clicked_brick = std::nullopt;
 
 		switch (event.type) {
@@ -64,26 +65,26 @@ std::shared_ptr<State> Editor::operator()()
 		case SDL_MOUSEMOTION:
 			x = event.motion.x;
 			y = event.motion.y;
-			if (is_mouseLeft_pressed) {
+			if (is_left_pressed) {
 				drag(x, y);
 			}
-			needRedraw = true;
+			is_redraw_needed = true;
 			break;
 		case SDL_MOUSEBUTTONDOWN:
 			x = event.motion.x;
 			y = event.motion.y;
-			if (exit_.isOver(x, y))
-				return std::make_shared<MainScreen>(window_, renderer_);
+			if (exit.is_over(x, y))
+				return std::make_shared<MainScreen>(window, renderer);
 			if (event.button.button == SDL_BUTTON_LEFT)
-				onLeftClic(x, y);
+				on_left_click(x, y);
 			if (event.button.button == SDL_BUTTON_RIGHT)
-				onRightClic(x, y);
-			needRedraw = true;
+				on_right_click(x, y);
+			is_redraw_needed = true;
 			break;
 		}
 
-		if (needRedraw) {
-			needRedraw = false;
+		if (is_redraw_needed) {
+			is_redraw_needed = false;
 			draw(x, y);
 		}
 	}
@@ -91,21 +92,21 @@ std::shared_ptr<State> Editor::operator()()
 
 void Editor::draw(float x, float y)
 {
-	renderer_.clear();
+	renderer.clear();
 
-	SDL::Rect src_bg = { 0, 0, assets_.bg.getWidth(), assets_.bg.getHeight() };
+	SDL::Rect src_bg = { 0, 0, assets.bg.getWidth(), assets.bg.getHeight() };
 	SDL::FRect dst_bg = { 0, 0, static_cast<float>(src_bg.w), static_cast<float>(src_bg.h) };
 
 	for (dst_bg.y = 0; dst_bg.y < 400; dst_bg.y += src_bg.h) {
 		for (dst_bg.x = 0; dst_bg.x < 400; dst_bg.x += src_bg.w)
-			renderer_.copy(assets_.bg, src_bg, dst_bg);
+			renderer.copy(assets.bg, src_bg, dst_bg);
 	}
 
-	canva_.visit(RenderVisitor{ renderer_, assets_, canva_ });
+	canva.visit(Render_visitor{ renderer, assets, canva });
 
-	renderer_.setDrawColor(255, 0, 0, 25);
-	SDL::FRect filter = { 0, canva_.get_height() - 50, canva_.get_width(), 50 };
-	renderer_.fillRect(filter);
+	renderer.setDrawColor(255, 0, 0, 25);
+	SDL::FRect filter = { 0, canva.get_height() - 50, canva.get_width(), 50 };
+	renderer.fillRect(filter);
 
 	constexpr int dim_x = 128;
 	constexpr int dim_y = 512;
@@ -113,25 +114,25 @@ void Editor::draw(float x, float y)
 	SDL::Rect src = { 0, 0, dim_x, dim_y };
 	SDL::Rect dst = { 400 - dim_x, 0, dim_x, dim_y };
 
-	renderer_.copy(assets_.ui, src, dst);
+	renderer.copy(assets.ui, src, dst);
 
-	for (Material &a : sources_) {
-		a.draw(renderer_);
+	for (Material &a : sources) {
+		a.draw(renderer);
 	}
 
-	exit_.draw(renderer_, exit_.isOver(x, y));
-	save_.draw(renderer_, save_.isOver(x, y));
+	exit.draw(renderer, exit.is_over(x, y));
+	save.draw(renderer, save.is_over(x, y));
 
-	renderer_.present();
+	renderer.present();
 }
 
-void Editor::onLeftClic(float x, float y)
+void Editor::on_left_click(float x, float y)
 {
-	auto idx_brick = canva_.get_brick(x, y);
+	auto idx_brick = canva.get_brick(x, y);
 	if (!idx_brick && is_in_canva(x, y)) {
-		auto idx = canva_.add_brick_safe(x, y, sources_[source_].getDurability());
+		auto idx = canva.add_brick_safe(x, y, sources[source].get_dura());
 		if (idx)
-			idx_brick = { { *idx, canva_.get_brick(*idx) } };
+			idx_brick = { { *idx, canva.get_brick(*idx) } };
 	}
 
 	if (idx_brick) {
@@ -140,16 +141,16 @@ void Editor::onLeftClic(float x, float y)
 		click_offset_y = idx_brick->second.get_y() - y;
 	}
 
-	for (unsigned int i = 0; i < sources_.size(); i++) {
-		if (sources_[i].isOver(x, y)) {
-			sources_[source_].setSelected(false);
-			sources_[i].setSelected(true);
-			source_ = i;
+	for (unsigned int i = 0; i < sources.size(); i++) {
+		if (sources[i].is_over(x, y)) {
+			sources[source].set_selected(false);
+			sources[i].set_selected(true);
+			source = i;
 			break;
 		}
 	}
 
-	if (save_.isOver(x, y)) {
+	if (save.is_over(x, y)) {
 		const auto t = std::time(nullptr);
 		const auto tm = *std::localtime(&t);
 		std::ostringstream oss;
@@ -157,15 +158,15 @@ void Editor::onLeftClic(float x, float y)
 		auto time = oss.str();
 
 		std::ofstream out("save/save_" + time + ".save", std::ios::out);
-		canva_.save(out);
+		canva.save(out);
 		out.close();
 	}
 }
 
-void Editor::onRightClic(float x, float y)
+void Editor::on_right_click(float x, float y)
 {
-	if (auto idx = canva_.get_brick(x, y)) {
-		canva_.remove_brick(idx->first);
+	if (auto idx = canva.get_brick(x, y)) {
+		canva.remove_brick(idx->first);
 	}
 }
 
@@ -180,5 +181,5 @@ void Editor::drag(float x, float y)
 	if (!is_in_canva(new_x, new_y))
 		return;
 
-	canva_.replace_brick_safe(*clicked_brick, new_x, new_y);
+	canva.replace_brick_safe(*clicked_brick, new_x, new_y);
 }

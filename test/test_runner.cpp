@@ -2,8 +2,8 @@
 
 #include <SDL.h>
 
-#include <iostream>
 #include "test_save.h"
+#include <iostream>
 
 int main(void)
 {

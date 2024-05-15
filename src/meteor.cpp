@@ -1,6 +1,6 @@
+#include "exception.h"
 #include "mainscreen.h"
 #include "sdl.h"
-#include "exception.h"
 
 int main(void)
 {

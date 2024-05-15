@@ -2,20 +2,22 @@
 
 #include "sdl.h"
 
+#include <string>
+
 class Label {
     private:
-	SDL::Texture texture_;
-	SDL::Texture texture_h_;
-	std::string text_;
+	SDL::Texture texture;
+	SDL::Texture texture_h;
+	std::string text;
 
     public:
 	int x, y;
 
 	Label(const std::string &text, const SDL::Font &font, const SDL::Color &color, const SDL::Color &color_h,
 	      SDL::Renderer &renderer, int x, int y)
-		: texture_(renderer, font.renderText(text, color))
-		, texture_h_(renderer, font.renderText(text, color_h))
-		, text_(text)
+		: texture(renderer, font.renderText(text, color))
+		, texture_h(renderer, font.renderText(text, color_h))
+		, text(text)
 		, x(x)
 		, y(y)
 	{
@@ -23,42 +25,42 @@ class Label {
 
 	void draw(SDL::Renderer &renderer)
 	{
-		const SDL::Rect textureRect = texture_.getRect();
+		const SDL::Rect textureRect = texture.getRect();
 		const SDL::Rect rect = { x, y, textureRect.w, textureRect.h };
-		renderer.copy(texture_, textureRect, rect);
+		renderer.copy(texture, textureRect, rect);
 	}
 
 	void draw(SDL::Renderer &renderer, bool highlighted)
 	{
 		if (highlighted) {
-			const SDL::Rect textureRect = texture_h_.getRect();
+			const SDL::Rect textureRect = texture_h.getRect();
 			const SDL::Rect rect = { x, y, textureRect.w, textureRect.h };
-			renderer.copy(texture_h_, textureRect, rect);
+			renderer.copy(texture_h, textureRect, rect);
 		} else
 			draw(renderer);
 	}
 
-	inline bool isOver(int a, int b)
+	inline bool is_over(int a, int b)
 	{
-		return a >= x && a <= x + texture_.getWidth() && b >= y && b <= y + texture_.getHeight();
+		return a >= x && a <= x + texture.getWidth() && b >= y && b <= y + texture.getHeight();
 	};
 
-	void setText(const std::string &text, const SDL::Font &font, const SDL::Color &color, const SDL::Color &color_h,
-		     SDL::Renderer &renderer)
+	void set_text(const std::string &str, const SDL::Font &font, const SDL::Color &color, const SDL::Color &color_h,
+		      SDL::Renderer &renderer)
 	{
-		texture_ = SDL::Texture(renderer, font.renderText(text, color));
-		texture_h_ = SDL::Texture(renderer, font.renderText(text, color_h));
-		text_ = text;
+		texture = SDL::Texture(renderer, font.renderText(str, color));
+		texture_h = SDL::Texture(renderer, font.renderText(str, color_h));
+		text = str;
 	}
 
-	inline std::string getText()
+	inline std::string get_text()
 	{
-		return text_;
+		return text;
 	}
 
-	inline SDL::Rect getRect()
+	inline SDL::Rect get_rect()
 	{
-		return { x, y, texture_.getRect().w, texture_.getRect().h };
+		return { x, y, texture.getRect().w, texture.getRect().h };
 	}
 };
 
@@ -254,35 +256,35 @@ class Material {
 
 	static constexpr float w = 48, h = 16;
 
-	uint durability_;
-	bool selected_;
+	uint dura;
+	bool selected;
 
     public:
 	float x, y;
-	Material(SDL::Renderer renderer, uint durability, bool selected_, int x, int y)
+	Material(SDL::Renderer renderer, uint durability, bool is_selected, int x, int y)
 		: rect(renderer, "assets/asteroid.png")
 		, rect_h(renderer, "assets/asteroid_highlight.png")
-		, durability_(durability)
-		, selected_(selected_)
+		, dura(durability)
+		, selected(is_selected)
 		, x(x)
 		, y(y){};
 
-	inline uint getDurability() const
+	inline uint get_dura() const
 	{
-		return durability_;
+		return dura;
 	};
 
-	inline bool isSelected() const
+	inline bool is_selected() const
 	{
-		return selected_;
+		return selected;
 	};
 
-	inline void setSelected(bool s)
+	inline void set_selected(bool s)
 	{
-		selected_ = s;
+		selected = s;
 	};
 
-	inline bool isOver(float a, float b)
+	inline bool is_over(float a, float b)
 	{
 		return a >= x && a <= x + w && b >= y && b <= y + h;
 	};
@@ -292,7 +294,7 @@ class Material {
 		constexpr int max_durability = 5;
 		constexpr int dim = 96;
 
-		int off = max_durability - static_cast<int>(durability_);
+		int off = max_durability - static_cast<int>(dura);
 
 		SDL::Rect src = { off * dim, 0, dim, dim };
 
@@ -300,7 +302,7 @@ class Material {
 		float b = y + h / 2 - dim * 0.5;
 
 		SDL::FRect dst = { a, b, dim, dim };
-		if (selected_)
+		if (selected)
 			renderer.copy(rect_h, src, dst);
 		else
 			renderer.copy(rect, src, dst);

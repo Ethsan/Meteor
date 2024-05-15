@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SDL_mouse.h"
-#include "SDL_stdinc.h"
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>

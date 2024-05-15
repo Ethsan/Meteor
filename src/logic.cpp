@@ -1,13 +1,18 @@
 #include "logic.h"
+
+#include "exception.h"
 #include "vec2.h"
 
-#include <cstddef>
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <istream>
 #include <limits>
-#include "exception.h"
 #include <optional>
+#include <ostream>
 #include <span>
+#include <utility>
+#include <vector>
 
 constexpr float inf = std::numeric_limits<float>::infinity();
 
@@ -61,11 +66,11 @@ template <> void Logic::move(Paddle &paddle, float dt)
 	const float width = get_width();
 	const float height = get_height();
 
-	if (dir == NONE) {
+	if (paddle.direction == Paddle::none) {
 		;
-	} else if (dir == LEFT) {
+	} else if (paddle.direction == Paddle::left) {
 		paddle.x -= paddle_speed * dt;
-	} else if (dir == RIGHT) {
+	} else if (paddle.direction == Paddle::right) {
 		paddle.x += paddle_speed * dt;
 	}
 
@@ -255,25 +260,25 @@ template <> void Logic::collide(Ball &ball, Powerup &powerup)
 		return;
 
 	switch (powerup.power) {
-	case Powerup::SLOW_BALL:
+	case Powerup::slow_ball:
 		bonus_speed -= 0.4 * h;
 		break;
-	case Powerup::FAST_BALL:
+	case Powerup::fast_ball:
 		bonus_speed += 0.4 * h;
 		break;
-	case Powerup::EXTRA_BALL:
+	case Powerup::extra_ball:
 		add_ball(powerup.x, powerup.y, -ball.vx * .9, -ball.vy * .9);
 		break;
-	case Powerup::EXTRA_LIFE:
+	case Powerup::extra_life:
 		if (lives < 3)
 			lives++;
 		break;
 
-	case Powerup::SMALL_BALL:
+	case Powerup::small_ball:
 		break;
-	case Powerup::BIG_BALL:
+	case Powerup::big_small:
 		break;
-	case Powerup::STRONG_BALL:
+	case Powerup::strong_ball:
 		break;
 	}
 	powerup.alive = false;
@@ -354,7 +359,7 @@ std::optional<std::size_t> Logic::add_brick_safe(float x, float y, uint durabili
 			return std::nullopt;
 		}
 	}
-	return add_brick(x, y, Brick::RECT, durability, std::nullopt);
+	return add_brick(x, y, Brick::rect, durability, std::nullopt);
 }
 
 void Logic::replace_brick_safe(std::size_t index, float x, float y)
@@ -437,9 +442,9 @@ void Logic::init()
 
 	for (float x = Brick::hex_r; x < w - Brick::hex_r; x += 50)
 		for (float y = Brick::hex_r; y < h / 3; y += 50)
-			add_brick(x, y, Brick::HEX, 5, std::nullopt);
+			add_brick(x, y, Brick::hex, 5, std::nullopt);
 	//test powerups
-	add_brick(w / 3, h / 2, Brick::RECT, 1, Powerup::EXTRA_BALL);
+	add_brick(w / 3, h / 2, Brick::rect, 1, Powerup::extra_ball);
 }
 
 void Logic::save(std::ostream &output)
@@ -469,7 +474,7 @@ void Logic::save(std::ostream &output)
 void health_check(std::istream &cin)
 {
 	if (cin.eof() || cin.bad() || cin.fail())
-		throw BadSaveFormat();
+		throw Bad_format();
 }
 
 Logic Logic::load(std::istream &save)
@@ -573,11 +578,11 @@ Logic Logic::load(std::istream &save)
 								 std::optional<Powerup::type>(Powerup::type(powerup));
 
 		switch (shape) {
-		case Brick::RECT:
-		case Brick::HEX:
+		case Brick::rect:
+		case Brick::hex:
 			break;
 		default:
-			throw BadSaveFormat();
+			throw Bad_format();
 		}
 		logic.add_brick(x, y, Brick::Shape(shape), durability, p);
 	}

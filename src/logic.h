@@ -1,20 +1,25 @@
 #pragma once
 
-#include "collisiongrid.h"
-
 #include "exception.h"
+
+#include <array>
+#include <fstream>
+#include <iostream>
 #include <istream>
+#include <optional>
 #include <ostream>
 #include <string>
+#include <utility>
 #include <vector>
-#include <fstream>
-#include <optional>
-#include <array>
 
 class Paddle {
-	float x, y;
-
     public:
+	enum dir {
+		left,
+		right,
+		none,
+	};
+
 	Paddle(float x, float y)
 		: x(x)
 		, y(y)
@@ -29,8 +34,17 @@ class Paddle {
 		return y;
 	}
 
+	dir get_dir() const
+	{
+		return direction;
+	}
+
 	friend class Logic;
 	static constexpr float w = 56, h = 30;
+
+    private:
+	float x, y;
+	dir direction = none;
 };
 
 class Ball {
@@ -76,13 +90,13 @@ class Ball {
 class Powerup {
     public:
 	enum type {
-		SLOW_BALL,
-		FAST_BALL,
-		EXTRA_BALL,
-		EXTRA_LIFE,
-		SMALL_BALL,
-		BIG_BALL,
-		STRONG_BALL,
+		slow_ball,
+		fast_ball,
+		extra_ball,
+		extra_life,
+		small_ball,
+		big_small,
+		strong_ball,
 	};
 
 	Powerup(float x, float y, type t)
@@ -123,13 +137,12 @@ class Powerup {
 
 class Brick {
     public:
-	enum Shape { RECT, HEX };
+	enum Shape { rect, hex };
 
 	Brick(float x, float y, Shape shape, uint dura = 1, std::optional<Powerup::type> powerup = std::nullopt)
 		: x(x)
 		, y(y)
 		, dura(dura)
-		, last_hit(-1)
 		, powerup(powerup)
 		, shape(shape)
 	{
@@ -182,7 +195,7 @@ class Brick {
 	std::vector<std::pair<float, float> > get_points() const
 	{
 		switch (shape) {
-		case RECT: {
+		case rect: {
 			std::vector<std::pair<float, float> > res;
 			res.reserve(rect_points.size());
 			for (auto &p : rect_points) {
@@ -190,7 +203,7 @@ class Brick {
 			}
 			return res;
 		}
-		case HEX: {
+		case hex: {
 			std::vector<std::pair<float, float> > res;
 			res.reserve(hex_points.size());
 			for (auto &p : hex_points) {
@@ -206,15 +219,9 @@ class Brick {
     private:
 	float x, y;
 	uint dura;
-	int last_hit;
+	int last_hit = -1;
 	std::optional<Powerup::type> powerup;
 	Shape shape;
-};
-
-enum Paddle_dir {
-	NONE,
-	LEFT,
-	RIGHT,
 };
 
 class Logic {
@@ -224,8 +231,6 @@ class Logic {
 		WIN,
 		LOST,
 	};
-
-	Paddle_dir dir = NONE;
 
 	Logic(float width, float height, bool default_stage = false)
 		: w(width)
@@ -239,7 +244,7 @@ class Logic {
 	{
 		std::ifstream save_import(save_file, std::ios::in);
 		if (!save_import.is_open())
-			throw BadSaveFormat();
+			throw Bad_format();
 		Logic l(load(save_import));
 		save_import.close();
 		return l;
@@ -248,6 +253,11 @@ class Logic {
 	static Logic load(std::istream &save);
 
 	void step(float dt);
+
+	void set_paddle_dir(Paddle::dir d)
+	{
+		paddle.direction = d;
+	}
 
 	float get_width() const
 	{
@@ -324,26 +334,7 @@ class Logic {
 		return state;
 	}
 
-	/*	
-	************* SAVE FORMAT **************
-	----------------------------------------
-	| width,height                         |
-	| next_id                              |
-	| brick_count,ball_count,tick          |
-	| score,combo                          |
-	| speed,bounce_count                   |
-	| lives                                |
-	| paddle.id,paddle.x,paddle.y          |
-	| numberOfBalls                        |
-	| #balls(id,x,y,vx,vy,isalive)         |
-	| numberOfBricks                       |
-	| #bricks(id,x,y,durability,last_hit)  |
-	----------------------------------------
-	*/
-
 	void save(std::ostream &output);
-
-	int add_ball(float x, float y, float vx = 0, float vy = 1);
 
     private:
 	float w, h;
@@ -376,14 +367,11 @@ class Logic {
 		      std::optional<Powerup::type> type = std::nullopt);
 
 	int add_powerup(float x, float y, Powerup::type type);
+	int add_ball(float x, float y, float vx = 0, float vy = 1);
 
 	template <typename T> void move(T &obj, float dt);
 
 	template <typename T> void collide(Ball &ball, T &object);
 
-	void collide_brick(Ball &ball, auto &brick);
-
 	void init();
-
-	void init_canva();
 };
