@@ -104,6 +104,7 @@ struct RenderVisitor {
 
 std::shared_ptr<State> Game::operator()()
 {
+	std::optional<std::pair<int, int> > mouse_pos = std::nullopt;
 	for (;;) {
 		while (auto event = SDL::pollEvent()) {
 			if (event->type == SDL_QUIT) {
@@ -114,6 +115,8 @@ std::shared_ptr<State> Game::operator()()
 						return *state;
 					}
 				}
+			} else if (event->type == SDL_MOUSEMOTION) {
+				mouse_pos = std::make_pair(event->motion.x, event->motion.y);
 			}
 		}
 
@@ -128,8 +131,19 @@ std::shared_ptr<State> Game::operator()()
 
 		if (is_left_pressed && !is_right_pressed) {
 			logic_.dir = LEFT;
+			mouse_pos = std::nullopt;
 		} else if (!is_left_pressed && is_right_pressed) {
 			logic_.dir = RIGHT;
+			mouse_pos = std::nullopt;
+		} else if (mouse_pos) {
+			float margin = 10;
+			if (mouse_pos->first < logic_.get_paddle().get_x() - margin) {
+				logic_.dir = LEFT;
+			} else if (mouse_pos->first > logic_.get_paddle().get_x() + margin) {
+				logic_.dir = RIGHT;
+			} else {
+				logic_.dir = NONE;
+			}
 		} else {
 			logic_.dir = NONE;
 		}

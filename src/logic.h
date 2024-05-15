@@ -296,6 +296,11 @@ class Logic {
 		}
 		visitor(paddle);
 	}
+	
+	Paddle &get_paddle()
+	{
+		return paddle;
+	}
 
 	Brick &get_brick(std::size_t index)
 	{
