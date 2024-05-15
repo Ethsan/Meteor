@@ -4,6 +4,7 @@
 #include "mainscreen.h"
 #include "widget.h"
 #include "exception.h"
+#include <optional>
 
 struct RenderVisitor {
 	SDL::Renderer &renderer;
@@ -104,7 +105,9 @@ struct RenderVisitor {
 
 std::shared_ptr<State> Game::operator()()
 {
-	std::optional<std::pair<int, int> > mouse_pos = std::nullopt;
+	std::optional<std::pair<int, int> > mouse_pos = std::make_pair(0, 0);
+	mouse_pos = std::nullopt;
+
 	for (;;) {
 		while (auto event = SDL::pollEvent()) {
 			if (event->type == SDL_QUIT) {
@@ -137,10 +140,13 @@ std::shared_ptr<State> Game::operator()()
 			mouse_pos = std::nullopt;
 		} else if (mouse_pos) {
 			float margin = 10;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"  // disable maybe warnings
 			if (mouse_pos->first < logic_.get_paddle().get_x() - margin) {
 				logic_.dir = LEFT;
 			} else if (mouse_pos->first > logic_.get_paddle().get_x() + margin) {
 				logic_.dir = RIGHT;
+#pragma GCC diagnostic pop 
 			} else {
 				logic_.dir = NONE;
 			}

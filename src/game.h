@@ -46,7 +46,7 @@ class Game : public State {
 		, renderer_(renderer)
 		, save_file_(save_file)
 		, logic_(Logic::load(save_file))
-		, assets_{renderer_}
+		, assets_{ renderer_ }
 		, ui_factory_(renderer_){};
 
 	std::shared_ptr<State> operator()() override;
