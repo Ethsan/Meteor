@@ -141,12 +141,12 @@ std::shared_ptr<State> Game::operator()()
 		} else if (mouse_pos) {
 			float margin = 10;
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"  // disable maybe warnings
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized" // GCC false positive
 			if (mouse_pos->first < logic_.get_paddle().get_x() - margin) {
 				logic_.dir = LEFT;
 			} else if (mouse_pos->first > logic_.get_paddle().get_x() + margin) {
 				logic_.dir = RIGHT;
-#pragma GCC diagnostic pop 
+#pragma GCC diagnostic pop
 			} else {
 				logic_.dir = NONE;
 			}
