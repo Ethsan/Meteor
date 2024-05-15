@@ -256,10 +256,10 @@ template <> void Logic::collide(Ball &ball, Powerup &powerup)
 
 	switch (powerup.power) {
 	case Powerup::SLOW_BALL:
-		bonus_speed -= 0.1 * h;
+		bonus_speed -= 0.4 * h;
 		break;
 	case Powerup::FAST_BALL:
-		bonus_speed += 0.1 * h;
+		bonus_speed += 0.4 * h;
 		break;
 	case Powerup::EXTRA_BALL:
 		add_ball(powerup.x, powerup.y, -ball.vx * .9, -ball.vy * .9);

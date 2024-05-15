@@ -37,7 +37,7 @@ class Game : public State {
 		: window_(window)
 		, renderer_(renderer)
 		, save_file_()
-		, logic_(300, 300)
+		, logic_(300, 300, true)
 		, assets_(renderer_)
 		, ui_factory_(renderer_){};
 
