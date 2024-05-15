@@ -10,7 +10,7 @@ CFLAGS += -I$(SRC_DIR)
 
 LDFLAGS = $(shell sdl2-config --libs) -lSDL2_image -lSDL2_ttf
 
-OUT = bricked
+OUT = meteor
 
 SRC = $(shell find $(SRC_DIR) -iname *.cpp)
 OBJ = $(SRC:.cpp=.o)
