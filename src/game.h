@@ -34,6 +34,8 @@ struct Assets {
 	SDL::Texture bg;
 };
 
+// The Game class handle the interaction between the user and the game logic.
+// It is responsible for rendering the game and handling user input.
 class Game : public State {
     public:
 	Game(const SDL::Window &w, const SDL::Renderer &r)

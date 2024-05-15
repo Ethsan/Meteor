@@ -11,6 +11,8 @@
 #include <optional>
 #include <string>
 
+// The Editor class is similar as the Game class, but it is responsible for
+// the editor logic.
 class Editor : public State {
     public:
 	Editor(const SDL::Window &w, const SDL::Renderer &r)

@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+// Selection: Class to handle the selection screen.
 class Selection : public State {
     public:
 	Selection(const SDL::Window &window, const SDL::Renderer &renderer)

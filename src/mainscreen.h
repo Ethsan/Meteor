@@ -4,6 +4,7 @@
 #include "sdl.h"
 #include "widget.h"
 
+// Background: Class to handle one panel of the parallax effect.
 class Background {
     public:
 	SDL::Texture texture;
@@ -27,6 +28,7 @@ class Background {
 	}
 };
 
+// MainScreen: Class to handle the main menu screen.
 class MainScreen : public State {
     private:
 	SDL::Window window;
