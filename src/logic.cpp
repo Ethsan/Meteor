@@ -572,6 +572,13 @@ Logic Logic::load(std::istream &save)
 		std::optional<Powerup::type> p = powerup == -1 ? std::nullopt :
 								 std::optional<Powerup::type>(Powerup::type(powerup));
 
+		switch (shape) {
+		case Brick::RECT:
+		case Brick::HEX:
+			break;
+		default:
+			throw BadSaveFormat();
+		}
 		logic.add_brick(x, y, Brick::Shape(shape), durability, p);
 	}
 

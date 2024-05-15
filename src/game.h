@@ -42,9 +42,11 @@ class Game : public State {
 		: window_(window)
 		, renderer_(renderer)
 		, save_file_(save_file)
-		, logic_(Logic::loadFromFile(save_file))
-		, assets_{ .brick = { renderer_, "assets/asteroid.png" },
+		, logic_(Logic::load(save_file))
+		, assets_{ .brick_rect = { renderer_, "assets/asteroid.png" },
+			   .brick_hex = { renderer_, "assets/hex.png" },
 			   .ball = { renderer_, "assets/ball.png" },
+			   .powerups = { renderer_, "assets/powerups.png" },
 			   .paddle = { renderer_, "assets/shield.png" },
 			   .ship = { renderer_, "assets/ship_forward.png" },
 			   .ship_right = { renderer_, "assets/ship_right.png" },
