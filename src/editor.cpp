@@ -177,5 +177,8 @@ void Editor::drag(float x, float y)
 	float new_x = x + click_offset_x;
 	float new_y = y + click_offset_y;
 
+	if (!is_in_canva(new_x, new_y))
+		return;
+
 	canva_.replace_brick_safe(*clicked_brick, new_x, new_y);
 }

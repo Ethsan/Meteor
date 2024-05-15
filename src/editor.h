@@ -51,8 +51,8 @@ class Editor : public State {
 
 	inline bool is_in_canva(float x, float y) const
 	{
-		return x <= canva_.get_width() - Brick::rect_w && x >= 0 &&
-		       y <= canva_.get_height() - Brick::rect_h - 50 && y >= 0;
+		return x - Brick::rect_w / 2 <= canva_.get_width() - Brick::rect_w && x - Brick::rect_w / 2 >= 0 &&
+		       y - Brick::rect_h / 2 <= canva_.get_height() - Brick::rect_h - 50 && y - Brick::rect_h / 2 >= 0;
 	}
 
 	std::optional<std::size_t> clicked_brick = std::nullopt;
