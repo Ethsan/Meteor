@@ -227,16 +227,13 @@ class Logic {
 
 	Paddle_dir dir = NONE;
 
-	Logic(float width, float height, bool canva = false)
+	Logic(float width, float height, bool default_stage = false)
 		: w(width)
 		, h(height)
 	{
-		if (canva)
-			init_canva();
-		else
+		if (default_stage)
 			init();
 	}
-
 
 	static Logic load(const std::string &save_file)
 	{
@@ -296,7 +293,7 @@ class Logic {
 		}
 		visitor(paddle);
 	}
-	
+
 	Paddle &get_paddle()
 	{
 		return paddle;
@@ -339,6 +336,8 @@ class Logic {
 
 	void save(std::ostream &output);
 
+	int add_ball(float x, float y, float vx = 0, float vy = 1);
+
     private:
 	float w, h;
 
@@ -365,8 +364,6 @@ class Logic {
 	const float paddle_speed = w / 2;
 
 	int lives = 3;
-
-	int add_ball(float x, float y, float vx = 0, float vy = 1);
 
 	int add_brick(float x, float y, Brick::Shape shape, uint durability = 1,
 		      std::optional<Powerup::type> type = std::nullopt);

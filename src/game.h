@@ -7,6 +7,18 @@
 #include <string>
 
 struct Assets {
+	Assets(SDL::Renderer &renderer)
+		: brick_rect{ renderer, "assets/asteroid.png" }
+		, brick_hex{ renderer, "assets/hex.png" }
+		, ball{ renderer, "assets/ball.png" }
+		, powerups{ renderer, "assets/powerups.png" }
+		, paddle{ renderer, "assets/shield.png" }
+		, ship{ renderer, "assets/ship_forward.png" }
+		, ship_right{ renderer, "assets/ship_right.png" }
+		, ship_left{ renderer, "assets/ship_left.png" }
+		, ui{ renderer, "assets/side.png" }
+		, bg{ renderer, "assets/bg.png" } {};
+
 	SDL::Texture brick_rect;
 	SDL::Texture brick_hex;
 	SDL::Texture ball;
@@ -26,16 +38,7 @@ class Game : public State {
 		, renderer_(renderer)
 		, save_file_()
 		, logic_(300, 300)
-		, assets_{ .brick_rect = { renderer_, "assets/asteroid.png" },
-			   .brick_hex = { renderer_, "assets/hex.png" },
-			   .ball = { renderer_, "assets/ball.png" },
-			   .powerups = { renderer_, "assets/powerups.png" },
-			   .paddle = { renderer_, "assets/shield.png" },
-			   .ship = { renderer_, "assets/ship_forward.png" },
-			   .ship_right = { renderer_, "assets/ship_right.png" },
-			   .ship_left = { renderer_, "assets/ship_left.png" },
-			   .ui = { renderer_, "assets/side.png" },
-			   .bg = { renderer_, "assets/bg.png" } }
+		, assets_(renderer_)
 		, ui_factory_(renderer_){};
 
 	Game(const SDL::Window &window, const SDL::Renderer &renderer, const std::string save_file)
@@ -43,16 +46,7 @@ class Game : public State {
 		, renderer_(renderer)
 		, save_file_(save_file)
 		, logic_(Logic::load(save_file))
-		, assets_{ .brick_rect = { renderer_, "assets/asteroid.png" },
-			   .brick_hex = { renderer_, "assets/hex.png" },
-			   .ball = { renderer_, "assets/ball.png" },
-			   .powerups = { renderer_, "assets/powerups.png" },
-			   .paddle = { renderer_, "assets/shield.png" },
-			   .ship = { renderer_, "assets/ship_forward.png" },
-			   .ship_right = { renderer_, "assets/ship_right.png" },
-			   .ship_left = { renderer_, "assets/ship_left.png" },
-			   .ui = { renderer_, "assets/side.png" },
-			   .bg = { renderer_, "assets/bg.png" } }
+		, assets_{renderer_}
 		, ui_factory_(renderer_){};
 
 	std::shared_ptr<State> operator()() override;

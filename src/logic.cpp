@@ -2,6 +2,7 @@
 #include "vec2.h"
 
 #include <cstddef>
+#include <iostream>
 #include <istream>
 #include <limits>
 #include "exception.h"
@@ -435,37 +436,27 @@ void Logic::init()
 	add_ball(w / 2, h / 2);
 }
 
-void Logic::init_canva()
-{
-	state = RUNNING;
-	tick = 0;
-	score = 0;
-
-	add_ball(w / 2, 6 * h / 7);
-}
-
 void Logic::save(std::ostream &output)
 {
 	output << w << "," << h << std::endl;
-	output << brick_count << "," << ball_count << "," << tick << std::endl;
+	output << tick << std::endl;
 	output << score << "," << combo << std::endl;
 	output << bonus_speed << "," << bounce_count << std::endl;
-	output << lives << std::endl;
-	output << paddle.x << "," << paddle.y << std::endl;
-	output << balls.size() << std::endl;
+	output << lives << "," << paddle.x << "," << paddle.y << std::endl;
+	output << ball_count << std::endl;
 	for (auto &ball : balls) {
 		if (!ball.alive)
 			continue;
 		output << ball.x << "," << ball.y << "," << ball.vx << "," << ball.vy << std::endl;
 	}
-	output << bricks.size() << std::endl;
+	output << brick_count << std::endl;
 	for (auto &brick : bricks) {
 		if (brick.dura == 0)
 			continue;
 		auto powerup = brick.powerup ? brick.powerup.value() : -1;
 
-		output << brick.x << "," << brick.y << "," << brick.dura << "," << brick.last_hit << "," << brick.shape
-		       << "," << powerup << std::endl;
+		output << brick.x << "," << brick.y << "," << brick.dura << "," << brick.shape << "," << powerup
+		       << std::endl;
 	}
 }
 
@@ -488,24 +479,27 @@ Logic Logic::load(std::istream &save)
 	save.ignore(max_size, '\n');
 	health_check(save);
 
-	Logic logic{ w, h, true };
+	Logic logic{ w, h };
 
 	health_check(save);
 	save >> logic.tick;
 	health_check(save);
 	save.ignore(max_size, '\n');
+
 	save >> logic.score;
 	health_check(save);
 	save.ignore(max_size, ',');
 	save >> logic.combo;
 	health_check(save);
 	save.ignore(max_size, '\n');
+
 	save >> logic.bonus_speed;
 	health_check(save);
 	save.ignore(max_size, ',');
 	save >> logic.bounce_count;
 	health_check(save);
 	save.ignore(max_size, '\n');
+
 	save >> logic.lives;
 	health_check(save);
 	save.ignore(max_size, ',');

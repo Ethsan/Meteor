@@ -1,6 +1,7 @@
 #include "editor.h"
 #include "SDL_events.h"
 #include "SDL_mouse.h"
+#include "game.h"
 #include "logic.h"
 #include "mainscreen.h"
 #include "sdl.h"
@@ -15,7 +16,7 @@
 
 struct RenderVisitor {
 	SDL::Renderer &renderer;
-	const EditorAssets &assets;
+	const Assets &assets;
 	const Logic &logic;
 
 	void operator()(const auto &)
@@ -35,7 +36,12 @@ struct RenderVisitor {
 		float y = brick.get_y() - dim * 0.5;
 
 		SDL::FRect dst = { x, y, dim, dim };
-		renderer.copy(assets.brick, src, dst);
+		switch (brick.get_form()) {
+		case Brick::RECT:
+			return renderer.copy(assets.brick_rect, src, dst);
+		case Brick::HEX:
+			return renderer.copy(assets.brick_hex, src, dst);
+		}
 	}
 };
 

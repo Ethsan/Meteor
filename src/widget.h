@@ -249,8 +249,8 @@ class UI_Factory {
 
 class Material {
     private:
-	SDL::Texture sprites_;
-	SDL::Texture sprites_h_;
+	SDL::Texture rect;
+	SDL::Texture rect_h;
 
 	static constexpr float w = 48, h = 16;
 
@@ -260,8 +260,8 @@ class Material {
     public:
 	float x, y;
 	Material(SDL::Renderer renderer, uint durability, bool selected_, int x, int y)
-		: sprites_(renderer, "assets/asteroid.png")
-		, sprites_h_(renderer, "assets/asteroid_highlight.png")
+		: rect(renderer, "assets/asteroid.png")
+		, rect_h(renderer, "assets/asteroid_highlight.png")
 		, durability_(durability)
 		, selected_(selected_)
 		, x(x)
@@ -301,8 +301,8 @@ class Material {
 
 		SDL::FRect dst = { a, b, dim, dim };
 		if (selected_)
-			renderer.copy(sprites_h_, src, dst);
+			renderer.copy(rect_h, src, dst);
 		else
-			renderer.copy(sprites_, src, dst);
+			renderer.copy(rect, src, dst);
 	}
 };
